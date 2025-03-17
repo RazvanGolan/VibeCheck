@@ -1,0 +1,74 @@
+### Rider / JetBrains
+.idea/
+*.sln.iml
+*.sln.DotSettings.user
+*.suo
+*.user
+*.dotCover
+*.ReSharper*
+*.ReSharper*/
+*.cache/
+
+### .NET / C#
+bin/
+obj/
+.vscode/
+.project/
+.DS_Store
+*.log
+*.vs/
+*.userosscache
+*.suo
+*.ntvs*
+
+### Node.js / React (VS Code & WebStorm)
+node_modules/
+build/
+dist/
+.npm/
+.nvmrc
+.vscode/
+.webstorm*
+.idea/
+*.log
+coverage/
+*.cache/
+yarn.lock
+package-lock.json
+
+### PostgreSQL
+pgdata/
+*.pgsql
+*.pgdump
+*.psql_history
+
+### Environment Files
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
