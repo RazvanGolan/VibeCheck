@@ -17,23 +17,22 @@ namespace VibeCheck.DAL.Configurations
 
             builder.HasKey(r => r.RoundId);
 
-            builder.Property(r => r.Theme)
-                .IsRequired()
-                .HasMaxLength(100);
-
             builder.Property(r => r.RoundNumber).IsRequired();
 
             builder.Property(r => r.Status)
                 .HasDefaultValue(0);
-
-            //builder.Property(r => r.StartTime)
-            //    .HasDefaultValueSql("GETDATE()");
 
             // relationship with Game
             builder.HasOne(r => r.Game)
                 .WithMany(g => g.Rounds)
                 .HasForeignKey(r => r.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // relationship with Theme. A round has a theme adn that's it
+            builder.HasOne(r => r.Theme)
+                .WithMany()
+                .HasForeignKey(r => r.ThemeId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
     }

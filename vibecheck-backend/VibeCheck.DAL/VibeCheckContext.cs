@@ -20,6 +20,8 @@ namespace VibeCheck.DAL
         public DbSet<Round> Rounds { get; set; } = null!;
         public DbSet<Song> Songs { get; set; } = null!;
         public DbSet<Vote> Votes { get; set; } = null!;
+        public DbSet<Theme> Themes { get; set; } = null!;
+        public DbSet<PlayerScore> PlayerScores { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +34,8 @@ namespace VibeCheck.DAL
             modelBuilder.ApplyConfiguration(new RoundConfiguration());
             modelBuilder.ApplyConfiguration(new SongConfiguration());
             modelBuilder.ApplyConfiguration(new VoteConfiguration());
+            modelBuilder.ApplyConfiguration(new ThemeConfiguration());
+            modelBuilder.ApplyConfiguration(new PlayerScoreConfiguration());
 
         }
 

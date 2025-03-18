@@ -49,11 +49,32 @@ namespace VibeCheck.DAL.Migrations
                     b.ToTable("Games", (string)null);
                 });
 
+            modelBuilder.Entity("VibeCheck.DAL.Entities.PlayerScore", b =>
+                {
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("TotalScore")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GameId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PlayerScores");
+                });
+
             modelBuilder.Entity("VibeCheck.DAL.Entities.Round", b =>
                 {
                     b.Property<Guid>("RoundId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("GameId")
                         .HasColumnType("uuid");
@@ -69,14 +90,14 @@ namespace VibeCheck.DAL.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<string>("Theme")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<Guid>("ThemeId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("RoundId");
 
                     b.HasIndex("GameId");
+
+                    b.HasIndex("ThemeId");
 
                     b.ToTable("Rounds", (string)null);
                 });
@@ -117,6 +138,33 @@ namespace VibeCheck.DAL.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Songs", (string)null);
+                });
+
+            modelBuilder.Entity("VibeCheck.DAL.Entities.Theme", b =>
+                {
+                    b.Property<Guid>("ThemeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("ThemeId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Themes", (string)null);
                 });
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.User", b =>
@@ -195,6 +243,25 @@ namespace VibeCheck.DAL.Migrations
                     b.Navigation("HostUser");
                 });
 
+            modelBuilder.Entity("VibeCheck.DAL.Entities.PlayerScore", b =>
+                {
+                    b.HasOne("VibeCheck.DAL.Entities.Game", "Game")
+                        .WithMany("Leaderboard")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("VibeCheck.DAL.Entities.User", "Player")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Player");
+                });
+
             modelBuilder.Entity("VibeCheck.DAL.Entities.Round", b =>
                 {
                     b.HasOne("VibeCheck.DAL.Entities.Game", "Game")
@@ -203,7 +270,15 @@ namespace VibeCheck.DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("VibeCheck.DAL.Entities.Theme", "Theme")
+                        .WithMany()
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Game");
+
+                    b.Navigation("Theme");
                 });
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Song", b =>
@@ -254,6 +329,8 @@ namespace VibeCheck.DAL.Migrations
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Game", b =>
                 {
+                    b.Navigation("Leaderboard");
+
                     b.Navigation("Rounds");
                 });
 
