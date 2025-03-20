@@ -1,16 +1,13 @@
-# docker-compose.yml
-
-version: '3.9'
 services:
   backend:
     build:
-      context: ./src
-      dockerfile: Dockerfile
+      context: ./vibecheck-backend
+      dockerfile: VibeCheck.PL/Dockerfile
     ports:
       - "8080:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Default=Host=postgres;Database=mydb;Username=postgres;Password=postgres
+      - ConnectionStrings__VibeCheckContext=Host=postgres;Database=VibeCheck;Username=postgres;Password=150903
     depends_on:
       - postgres
 
@@ -19,8 +16,8 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      POSTGRES_PASSWORD: 150903
+      POSTGRES_DB: VibeCheck
     ports:
       - "5432:5432"  # Exposing port 5432
     volumes:
