@@ -26,6 +26,7 @@ function App() {
       }
       
       const data = await response.json();
+      console.log('Data:', data);
       setSongs(data.data || []);
     } catch (err) {
       console.error('Error searching songs:', err);
@@ -41,16 +42,16 @@ function App() {
   };
 
   return (
-    <div className="app-container max-w-4xl mx-auto p-4">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">SoundPeek</h1>
-        <p className="text-gray-600">Search and preview your favorite songs</p>
+    <div className="container py-4 mb-5">
+      <header className="text-center mb-4">
+        <h1 className="display-5 fw-bold">VibeCheck</h1>
+        <p className="text-muted">Search and preview your favorite songs</p>
       </header>
       
       <SearchBar onSearch={searchSongs} isLoading={loading} />
       
       {error && (
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+        <div className="alert alert-danger" role="alert">
           {error}
         </div>
       )}

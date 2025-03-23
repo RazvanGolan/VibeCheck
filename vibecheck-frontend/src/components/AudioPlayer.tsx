@@ -10,16 +10,38 @@ function AudioPlayer({ song }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [progress, setProgress] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    if (audioRef.current) {
-      // Reset and play when song changes
-      audioRef.current.pause();
-      audioRef.current.load();
-      audioRef.current.play().catch(e => console.error("Playback failed:", e));
-      setIsPlaying(true);
-      setProgress(0);
-    }
+    const playAudio = async () => {
+      if (!audioRef.current) return;
+      
+      try {
+        setIsLoading(true);
+        // Reset and prepare audio
+        audioRef.current.pause();
+        audioRef.current.load();
+        setProgress(0);
+        
+        // Wait for audio to be ready
+        if (audioRef.current.readyState < 2) {
+          await new Promise(resolve => {
+            audioRef.current?.addEventListener('canplay', resolve, { once: true });
+          });
+        }
+        
+        // Play audio
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (e) {
+        console.error("Playback failed:", e);
+        setIsPlaying(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    playAudio();
   }, [song]);
 
   useEffect(() => {
@@ -44,15 +66,28 @@ function AudioPlayer({ song }: AudioPlayerProps) {
     };
   }, []);
 
-  const togglePlayPause = (): void => {
-    if (audioRef.current) {
+  const togglePlayPause = async (): Promise<void> => {
+    if (!audioRef.current || isLoading) return;
+    
+    try {
       if (isPlaying) {
         audioRef.current.pause();
       } else {
-        audioRef.current.play().catch(e => console.error("Playback failed:", e));
+        await audioRef.current.play();
       }
       setIsPlaying(!isPlaying);
+    } catch (e) {
+      console.error("Playback failed:", e);
     }
+  };
+
+  const stopAudio = (): void => {
+    if (!audioRef.current || isLoading) return;
+    
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    setProgress(0);
+    setIsPlaying(false);
   };
 
   const formatTime = (seconds: number): string => {
@@ -62,48 +97,65 @@ function AudioPlayer({ song }: AudioPlayerProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center space-x-4">
+    <div className="fixed-bottom bg-white border-top shadow p-3">
+      <div className="container">
+        <div className="d-flex align-items-center">
           <img 
             src={song.album.cover_small} 
             alt={song.album.title}
-            className="w-12 h-12 object-cover rounded"
+            className="rounded me-3"
+            style={{ width: '48px', height: '48px', objectFit: 'cover' }}
           />
           
-          <div className="flex-1">
-            <div className="flex items-center mb-1">
-              <h4 className="font-medium truncate mr-2">{song.title}</h4>
-              <span className="text-sm text-gray-500 truncate">{song.artist.name}</span>
+          <div className="flex-grow-1">
+            <div className="d-flex align-items-center mb-1">
+              <h5 className="fw-medium text-truncate me-2 mb-0">{song.title}</h5>
+              <span className="small text-muted text-truncate">{song.artist.name}</span>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-500">{formatTime(progress)}</span>
-              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="d-flex align-items-center">
+              <span className="small text-muted me-2">{formatTime(progress)}</span>
+              <div className="progress flex-grow-1" style={{ height: '8px' }}>
                 <div 
-                  className="h-full bg-blue-500"
+                  className="progress-bar bg-primary"
                   style={{ width: `${(progress / (duration || 1)) * 100}%` }}
                 ></div>
               </div>
-              <span className="text-xs text-gray-500">{formatTime(duration)}</span>
+              <span className="small text-muted ms-2">{formatTime(duration)}</span>
             </div>
           </div>
           
-          <button 
-            onClick={togglePlayPause}
-            className="p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600"
-          >
-            {isPlaying ? (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="d-flex ms-3">
+            <button 
+              onClick={togglePlayPause}
+              disabled={isLoading}
+              className={`btn ${isLoading ? 'btn-secondary' : 'btn-primary'} btn-sm rounded-circle me-2`}
+              style={{ width: '38px', height: '38px' }}
+            >
+              {isLoading ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              ) : isPlaying ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-pause-fill" viewBox="0 0 16 16">
+                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-play-fill" viewBox="0 0 16 16">
+                  <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                </svg>
+              )}
+            </button>
+            
+            <button 
+              onClick={stopAudio}
+              disabled={isLoading || (!isPlaying && progress === 0)}
+              className={`btn ${isLoading || (!isPlaying && progress === 0) ? 'btn-secondary' : 'btn-danger'} btn-sm rounded-circle`}
+              style={{ width: '38px', height: '38px' }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-stop-fill" viewBox="0 0 16 16">
+                <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
               </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-          </button>
+            </button>
+          </div>
         </div>
       </div>
       
