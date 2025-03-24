@@ -1,11 +1,24 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using VibeCheck.BL.Interfaces;
+using VibeCheck.BL.Mapper;
+using VibeCheck.BL.Services;
 using VibeCheck.DAL;
+using VibeCheck.DAL.Entities;
+using VibeCheck.DAL.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+
+//builder.Services.AddControllers().AddJsonOptions(options =>
+//{
+//    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+//}); // or use that instead if you want to ignore cycles
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -27,6 +40,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>(); // register repository for User entity
+builder.Services.AddTransient<IUserService, UserService>(); // register service for User entity
+builder.Services.AddAutoMapper(typeof(UserProfile)); // register automapper
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var app = builder.Build();
 
