@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Users;
-using VibeCheck.DAL.Entities;
 
 namespace VibeCheck.PL.Controllers
 {

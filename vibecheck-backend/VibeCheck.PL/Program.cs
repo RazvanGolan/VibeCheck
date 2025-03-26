@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.BL.Mapper;
 using VibeCheck.BL.Services;

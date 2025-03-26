@@ -1,10 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VibeCheck.DAL.Repositories
 {
@@ -31,16 +25,11 @@ namespace VibeCheck.DAL.Repositories
             }
         }
 
-        public virtual async Task<IEntity> GetByIdAsync(Guid id)
+        public virtual async Task<IEntity?> GetByIdAsync(Guid id)
         {
             try
             {
-                var entity = await _dbSet.FindAsync(id);
-                if (entity == null)
-                {
-                    throw new Exception("Entity not found");
-                }
-                return entity;
+                return await _dbSet.FindAsync(id);
             }
             catch (Exception ex)
             {

@@ -1,10 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Users;
 using VibeCheck.DAL.Entities;
@@ -29,7 +24,6 @@ namespace VibeCheck.BL.Services
         {
             var user = _mapper.Map<User>(createUserDto);
             user.PasswordHash = _passwordHasher.HashPassword(user, createUserDto.Password);
-            user.CreatedAt = DateTime.UtcNow;
 
             var createdUser = await _userRepository.AddAsync(user);
             return _mapper.Map<UserDto>(createdUser);
