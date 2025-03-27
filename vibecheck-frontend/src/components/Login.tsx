@@ -44,6 +44,7 @@ const Login = () => {
               <input 
                 type="password" 
                 id="password" 
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -57,13 +58,6 @@ const Login = () => {
             <span>Don't have an account?</span>
             <a href="/signup">Sign up</a>
           </div>
-
-          <div className="spotify-login">
-            <button className="spotify-button">
-              <div className="spotify-icon">●</div>
-              Continue with Spotify
-            </button>
-          </div>
         </div>
 
         <div className="footer">
@@ -71,7 +65,7 @@ const Login = () => {
             <span className="music-icon">♪</span>
             <span>VibeCheck</span>
           </div>
-          <p className="copyright">© 2023 VibeCheck. All rights reserved.</p>
+          <p className="copyright">© 2025 VibeCheck. All rights reserved.</p>
         </div>
       </div>
     </div>
