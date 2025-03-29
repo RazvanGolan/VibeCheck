@@ -1,17 +1,14 @@
 .layout {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* Make layout take full viewport height */
-  }
-  
-  main {
+    min-height: 100vh;
+}
+
+main {
     flex: 1;
-    display: flex;
-    flex-direction: column;
     background-color: #F9FAFB;
-  }
-  
-  /* Ensure content inside main also expands properly */
-  main > * {
+}
+
+main > * {
     flex: 1;
-  }
+}
