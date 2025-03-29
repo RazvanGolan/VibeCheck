@@ -1,0 +1,25 @@
+.logo-small {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+  
+.music-icon {
+    font-size: 24px;
+    margin-right: 5px;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.copyright {
+    color: #999;
+    font-size: 12px;
+    margin: 0;
+}
