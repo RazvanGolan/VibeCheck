@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import './MainPage.css';
+import { useAuth } from '../context/AuthProvider';
 
 function MainPage() {
-    const [isAuthentificated, setIsAuthentificated] = useState(false);
+    const { isAuthenticated, user } = useAuth();
 
     return (
         <div className='main-page'>
             <h1>Welcome to the Main Page</h1>
-            <p>This is the main content of the page.</p>
+            {isAuthenticated ? (
+                <p>Hello, {user?.username}! Ready to discover new music?</p>
+            ) : (
+                <p>Sign in to discover personalized music recommendations.</p>
+            )}
         </div>
     );
 }

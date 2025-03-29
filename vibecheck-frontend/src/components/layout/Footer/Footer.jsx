@@ -7,7 +7,7 @@ function Footer() {
             <div className="footer">
                 <div className="logo-small">
                     <span className="music-icon">♪</span>
-                    <span>VibeCheck</span>
+                    <span className="title">VibeCheck</span>
                 </div>
                 <p className="copyright">© 2025 VibeCheck. All rights reserved.</p>
             </div>

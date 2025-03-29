@@ -23,3 +23,21 @@
     font-size: 12px;
     margin: 0;
 }
+
+@media screen and (max-width: 600px) {
+    .footer {
+        padding: 10px 30px;
+    }
+
+    .title {
+        font-size: 16px !important;
+    }
+
+    .copyright {
+        font-size: 10px !important;
+    }
+
+    .music-icon {
+        font-size: 20px !important;
+    }
+}
