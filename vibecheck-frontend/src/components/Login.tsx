@@ -12,29 +12,12 @@ const Login = () => {
     console.log('Login attempt with username:', username);
   };
 
-  const handleCreateRoom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username.trim()) {
-      // navigate('/create-room', { state: { username } });   TO BE IMPLEMENTED
-      navigate('/login', { state: { username } });
-    } else {
-      alert('Please enter a username');
-    }
-  };
-
   return (
     <div className="login-container">
       <div className="login-card">
-        <div className="header">
-          <div className="logo-small">
-            <span className="music-icon">♪</span>
-            <span>VibeCheck</span>
-          </div>
-        </div>
-
         <div className="login-content">
           <div className="music-icon-large">♪</div>
-          <h1>Welcome to VibeCheck</h1>
+          <h1 className="title">Welcome to VibeCheck</h1>
           <p className="login-subtitle">Choose your name to start playing</p>
 
           <form onSubmit={handleSubmit}>
@@ -51,19 +34,10 @@ const Login = () => {
             </div>
 
             <div className="button-group">
-              <button type="submit" className="play-button">Play!</button>
-              <button type="button" className="create-room-button" onClick={handleCreateRoom}>Create Room</button>
+              <button type="submit" className="submit-button">Submit</button>
             </div>
           </form>
 
-        </div>
-
-        <div className="footer">
-          <div className="logo-small">
-            <span className="music-icon">♪</span>
-            <span>VibeCheck</span>
-          </div>
-          <p className="copyright">© 2025 VibeCheck. All rights reserved.</p>
         </div>
       </div>
     </div>

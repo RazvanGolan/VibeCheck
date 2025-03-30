@@ -2,7 +2,7 @@ import './App.css';
 import Layout from './components/layout/Layout';
 import MainPage from './components/MainPage';
 import Login from './components/Login';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 
 function App() {
@@ -10,12 +10,19 @@ function App() {
     <div className="App">
     <AuthProvider>
       <BrowserRouter>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<MainPage/>} />
-              <Route path="/login" element={<Login />} />
-            </Routes>
-          </Layout>
+          <Routes>
+            <Route path="/" element={
+              <Layout>
+                <MainPage />
+              </Layout>
+            } />
+            <Route path="/login" element={
+              <Layout hideProfileSection={true}>
+                <Login /> 
+              </Layout> 
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </BrowserRouter>
     </AuthProvider>
     </div>
