@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VibeCheck.DAL;
@@ -11,9 +12,11 @@ using VibeCheck.DAL;
 namespace VibeCheck.DAL.Migrations
 {
     [DbContext(typeof(VibeCheckContext))]
-    partial class VibeCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250330092635_RemoveEmailAndPasswordFromUser")]
+    partial class RemoveEmailAndPasswordFromUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,6 +185,9 @@ namespace VibeCheck.DAL.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
                 });
