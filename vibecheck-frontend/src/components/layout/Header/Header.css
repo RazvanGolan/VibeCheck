@@ -94,6 +94,7 @@
     background-color: #111828;
     color: white;
     border: none;
+    font-weight: 500;
 }
 
 @media screen and (max-width: 600px) {

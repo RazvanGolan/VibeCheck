@@ -1,0 +1,142 @@
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+.start-playing {
+    display: flex;
+    align-items: center;
+    padding: 60px;
+    background-color: #0f172a;
+    width: 100%;
+}
+
+.start-playing-content {
+    text-align: left;
+    max-width: 600px;
+}
+
+.hero-title {
+    font-size: 42px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: white;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    font-size: 18px;
+    color: lightgrey;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.play-button {
+    background-color: white;
+    color: grey;
+    border: none;
+    padding: 14px 30px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.play-button:hover {
+    background-color: darkgrey;
+}
+
+.intro {
+    text-align: center;
+}
+
+.section-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+.steps-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px;
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.step-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.step-number {
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.step-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 15px;
+}
+
+.step-description {
+    color: #64748b;
+    line-height: 1.6;
+}
+
+@media screen and (max-width: 768px) {
+    .steps-container {
+        flex-direction: column;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .start-playing {
+        padding: 50px;
+        text-align: center;
+    }
+    .hero-title {
+        font-size: 28px;
+    }
+    .hero-subtitle {
+        font-size: 16px;
+    }
+    .play-button {
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+    .section-title {
+        font-size: 24px;
+    }
+    .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+    .step-title {
+        font-size: 18px;
+    }
+}
