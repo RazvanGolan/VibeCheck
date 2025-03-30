@@ -15,27 +15,6 @@ namespace VibeCheck.DAL.Configurations
             builder.Property(u => u.Username)
                 .IsRequired()
                 .HasMaxLength(50);
-
-            builder.Property(u => u.Email)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            builder.Property(u => u.PasswordHash)
-                .IsRequired()
-                .HasMaxLength(255);
-
-            //builder.Property(u => u.CreatedAt)
-            //    .IsRequired()
-            //    .HasDefaultValueSql("GETDATE()");
-
-            // Adding unique indexes for username and email because integrity is important
-            builder.HasIndex(u => u.Username)
-                .IsUnique();
-
-            builder.HasIndex(u => u.Email)
-                .IsUnique();
-
-
         }
     }
 }

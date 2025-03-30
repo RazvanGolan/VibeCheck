@@ -47,7 +47,7 @@ namespace VibeCheck.PL.Controllers
             }
         }
 
-        [HttpPut("UpdateUser")]
+        [HttpPut("UpdateUser/{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto User)
         {
             try
@@ -55,9 +55,9 @@ namespace VibeCheck.PL.Controllers
                 var updatedUser = await _userService.UpdateUserAsync(id, User);
                 return Ok(updatedUser);
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
         }
 
@@ -67,11 +67,11 @@ namespace VibeCheck.PL.Controllers
             try
             {
                 var deletedUser = await _userService.DeleteUserAsync(id);
-                return Ok(deletedUser);
+                return Ok(deletedUser); // or can return NoContent()
             }
-            catch (Exception ex)
+            catch (KeyNotFoundException ex)
             {
-                return BadRequest(ex.Message);
+                return NotFound(ex.Message);
             }
         }
     }

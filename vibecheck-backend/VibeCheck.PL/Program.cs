@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.BL.Mapper;
@@ -42,7 +41,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>(); // register repository for User entity
 builder.Services.AddTransient<IUserService, UserService>(); // register service for User entity
 builder.Services.AddAutoMapper(typeof(UserProfile)); // register automapper
-builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var app = builder.Build();
 

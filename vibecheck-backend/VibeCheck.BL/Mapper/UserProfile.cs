@@ -6,14 +6,13 @@ namespace VibeCheck.BL.Mapper
 {
     public class UserProfile : Profile
     {
-        public UserProfile() { 
+        public UserProfile() {
             CreateMap<User, UserDto>();
 
-            CreateMap<CreateUserDto, User>()
-                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+            CreateMap<CreateUserDto, User>();
 
             CreateMap<UpdateUserDto, User>()
-                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }
