@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthProvider';
 import { useState } from 'react';
 
 function MainPage() {
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated } = useAuth();
     const [currentPage, setCurrentPage] = useState(0);
+    const [showJoinInput, setShowJoinInput] = useState(false);
+    const [gameCode, setGameCode] = useState('');
 
     // Mock games data - this would come from your SignalR hub
-    const mockGames = [
+    const liveGames = [
         {
             id: 'game-1',
             gameMode: 'Classic Mode',
@@ -46,15 +48,13 @@ function MainPage() {
         },
     ];
 
-    // Calculate pagination
     const gamesPerPage = 3;
-    const pageCount = Math.ceil(mockGames.length / gamesPerPage);
-    const visibleGames = mockGames.slice(
+    const pageCount = Math.ceil(liveGames.length / gamesPerPage);
+    const visibleGames = liveGames.slice(
         currentPage * gamesPerPage, 
         (currentPage + 1) * gamesPerPage
     );
 
-    // Navigation handlers
     const nextPage = () => {
         setCurrentPage((prev) => (prev + 1) % pageCount);
     };
@@ -63,13 +63,57 @@ function MainPage() {
         setCurrentPage((prev) => (prev - 1 + pageCount) % pageCount);
     };
 
+    const handleJoinGame = () => {
+        if (gameCode.trim()) {
+            console.log(`Joining game with code: ${gameCode}`);
+            // Here you would call your API to join the game
+            setGameCode('');
+            setShowJoinInput(false);
+        }
+    };
+
     return (
         <div className="container">
             <div className="start-playing">
                 <div className="start-playing-content">
                     <h1 className="hero-title">Battle with Music, Win with Taste</h1>
                     <p className="hero-subtitle">Compete with friends to find the perfect song for any moment. Vote, rank, and crown the ultimate music curator!</p>
-                    <button className="play-button">Start Playing</button>
+                    
+                    {isAuthenticated ? (
+                        <div className="auth-buttons">
+                            <button className="play-button create">Create a Room</button>
+                            
+                            <div className="join-container">
+                                {showJoinInput ? (
+                                    <div className="join-input-group">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter game code" 
+                                            value={gameCode}
+                                            onChange={(e) => setGameCode(e.target.value)}
+                                            className="game-code-input"
+                                            onKeyPress={(e) => e.key === 'Enter' && handleJoinGame()}
+                                        />
+                                        <button 
+                                            className="game-code-submit" 
+                                            onClick={handleJoinGame}
+                                        >
+                                            &#8594;
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button 
+                                        className="play-button join" 
+                                        onClick={() => setShowJoinInput(true)}
+                                    >
+                                        Join a Room
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <button className="play-button">Start Playing</button>
+                    )}
                 </div>
             </div>
             <div className="into">
@@ -108,7 +152,7 @@ function MainPage() {
                         </button>
                     )}
 
-                    <div className={`games-container`}>
+                    <div className={`games-container ${liveGames.length <= 2 ? 'few-items' : ''}`}>
                         {visibleGames.map((game) => (
                             <div className="game-card" key={game.id}>
                                 <div className="game-header">
@@ -153,8 +197,25 @@ function MainPage() {
                     ))}
                 </div>
             </div>
-            <div className="create-account">
-
+            <div className="community-banner">
+                <div className="community-content">
+                    <h2 className="community-title">Join Our Growing Community</h2>
+                    <p className="community-description">Connect with music lovers, create memorable playlists, and discover new tracks together.</p>
+                    <div className="community-stats">
+                        <div className="stat-block">
+                            <span className="stat-number">10k+</span>
+                            <span className="stat-label">Active Users</span>
+                        </div>
+                        <div className="stat-block">
+                            <span className="stat-number">5k+</span>
+                            <span className="stat-label">Games Played</span>
+                        </div>
+                        <div className="stat-block">
+                            <span className="stat-number">50k+</span>
+                            <span className="stat-label">Songs Shared</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

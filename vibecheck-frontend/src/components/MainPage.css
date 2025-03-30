@@ -46,6 +46,43 @@
     background-color: darkgrey;
 }
 
+.auth-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.play-button.join {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+
+.join-input-group {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.game-code-input {
+    flex: 1;
+    border: none;
+    padding: 14px 15px;
+    font-size: 16px;
+    min-width: 160px;
+}
+
+.game-code-submit {
+    background-color: #49525f;
+    color: white;
+    border: none;
+    padding: 14px 18px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .intro {
     text-align: center;
 }
@@ -108,7 +145,20 @@
 }
 
 .live-games {
-    border-top: 2px solid #cbd5e1;
+    position: relative;
+    margin-top: 30px;
+}
+
+.live-games:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 1100px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(203,213,225,0) 0%, rgba(203,213,225,0.8) 50%, rgba(203,213,225,0) 100%);
 }
 
 .games-carousel {
@@ -128,6 +178,10 @@
     width: 100%;
     overflow-x: auto; 
     padding: 10px 0;
+}
+
+.games-container.few-items {
+    justify-content: center;
 }
 
 .game-card {
@@ -267,6 +321,62 @@
     background-color: #0f172a;
 }
 
+.community-banner {
+    background-color: #0f172a;
+    color: white;
+    padding: 60px;
+    text-align: center;
+    margin-top: 40px;
+}
+
+.community-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.community-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.community-description {
+    font-size: 18px;
+    color: lightgrey;
+    margin-bottom: 40px;
+    line-height: 1.6;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.community-stats {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+}
+
+.stat-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-number {
+    font-size: 36px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 16px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 @media screen and (max-width: 768px) {
     .steps-container {
         flex-direction: column;
@@ -275,6 +385,11 @@
     .games-container {
         flex-direction: column; 
         align-items: center;
+    }
+
+    .community-stats {
+        flex-direction: column;
+        gap: 30px;
     }
 }
 
@@ -303,5 +418,35 @@
     }
     .step-title {
         font-size: 18px;
+    }
+    .auth-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .play-button.create,
+    .play-button.join {
+        width: 100%;
+    }
+
+    .community-banner {
+        padding: 40px 20px;
+    }
+    
+    .community-title {
+        font-size: 24px;
+    }
+    
+    .community-description {
+        font-size: 16px;
+    }
+    
+    .stat-number {
+        font-size: 28px;
+    }
+
+    .join-input-group {
+        margin-top: 10px;
+        width: 100%;
     }
 }
