@@ -1,8 +1,7 @@
-import React from 'react';
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
 
-function Header() {
+function Header({ hideProfileSection = false }) {
     const { isAuthenticated, user, signIn, signOut } = useAuth();
 
     return (
@@ -11,28 +10,31 @@ function Header() {
                 <span className="music-icon">♪</span>
                 <span className="title">VibeCheck</span>
             </div>
-            {isAuthenticated ? (
-                <div className="user-profile">
-                    <div className="avatar-container">
-                        <img 
-                            src={user?.avatar} 
-                            alt="User avatar"
-                            className="user-avatar" 
-                        />
-                        <img 
-                            src="/assets/icons/dropdown-arrow.png" 
-                            alt="Dropdown" 
-                            className="dropdown-arrow"
-                        />
-                    </div>
-                    <div className="dropdown-menu">
-                        <div className="dropdown-item" onClick={signOut}>
-                            Sign Out
+
+            {!hideProfileSection && (
+                isAuthenticated ? (
+                    <div className="user-profile">
+                        <div className="avatar-container">
+                            <img 
+                                src={user?.avatar} 
+                                alt="User avatar"
+                                className="user-avatar" 
+                            />
+                            <img 
+                                src="/assets/icons/dropdown-arrow.png" 
+                                alt="Dropdown" 
+                                className="dropdown-arrow"
+                            />
+                        </div>
+                        <div className="dropdown-menu">
+                            <div className="dropdown-item" onClick={signOut}>
+                                Sign Out
+                            </div>
                         </div>
                     </div>
-                </div>
-            ) : (
-                <button onClick={signIn} className="sign-in-button">Sign In</button>
+                ) : (
+                    <button onClick={signIn} className="sign-in-button">Sign In</button>
+                )
             )}
         </header>
     );

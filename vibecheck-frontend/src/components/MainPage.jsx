@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import './MainPage.css';
 import { useAuth } from '../context/AuthProvider';
 
