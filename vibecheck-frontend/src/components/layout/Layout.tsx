@@ -1,8 +1,14 @@
+import React, { ReactNode } from 'react';
 import Header from './Header/Header';
 import Footer from './Footer/Footer';
 import './Layout.css';
 
-function Layout({ children, hideProfileSection = false }) {
+interface LayoutProps {
+  children: ReactNode;
+  hideProfileSection?: boolean;
+}
+
+function Layout({ children, hideProfileSection = false }: LayoutProps) {
     return (
         <div className="layout">
             <Header hideProfileSection={hideProfileSection} />

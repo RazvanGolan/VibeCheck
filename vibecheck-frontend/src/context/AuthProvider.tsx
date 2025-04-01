@@ -1,12 +1,23 @@
 import { createContext, useState, useContext } from 'react';
+import { User } from '../types/user';
 
-const AuthContext = createContext();
+const AuthContext = createContext<{
+  isAuthenticated: boolean;
+  user: User | null;
+  signIn: (username: string) => Promise<boolean>;
+  signOut: () => void;
+}>({
+  isAuthenticated: false,
+  user: null,
+  signIn: async () => false,
+  signOut: () => {}
+});
 
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
 
-  const signIn = async (username) => {
+  const signIn = async (username: string) => {
     try {
       // Mock API call - replace with actual API call to your .NET backend
       // const response = await fetch('api/auth/login', {
@@ -17,9 +28,9 @@ export function AuthProvider({ children }) {
       // const userData = await response.json();
       
       // For now, using mock data
-      const userData = {
+      const userData: User = {
         id: 'user-' + Math.random().toString(36).substr(2, 9),
-        username: "razvan golan",
+        username: username,
         avatar: "/avatars/1.png" // Corrected path
       };
       

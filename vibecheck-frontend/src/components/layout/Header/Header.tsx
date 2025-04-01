@@ -1,8 +1,17 @@
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
+import React from 'react';
 
-function Header({ hideProfileSection = false }) {
+interface HeaderProps {
+  hideProfileSection?: boolean;
+}
+
+function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement {
     const { isAuthenticated, user, signIn, signOut } = useAuth();
+
+    const handleSignIn = async (): Promise<void> => {
+        await signIn("guest");
+    };
 
     return (
         <header className="header">
@@ -33,7 +42,7 @@ function Header({ hideProfileSection = false }) {
                         </div>
                     </div>
                 ) : (
-                    <button onClick={signIn} className="sign-in-button">Sign In</button>
+                    <button onClick={handleSignIn} className="sign-in-button">Sign In</button>
                 )
             )}
         </header>

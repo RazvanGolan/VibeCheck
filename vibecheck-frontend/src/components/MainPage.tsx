@@ -1,15 +1,16 @@
+import { useState, KeyboardEvent, ChangeEvent } from 'react';
 import './MainPage.css';
 import { useAuth } from '../context/AuthProvider';
-import { useState } from 'react';
+import { LiveGame } from '../types/gameTypes';
 
 function MainPage() {
     const { isAuthenticated } = useAuth();
-    const [currentPage, setCurrentPage] = useState(0);
-    const [showJoinInput, setShowJoinInput] = useState(false);
-    const [gameCode, setGameCode] = useState('');
+    const [currentPage, setCurrentPage] = useState<number>(0);
+    const [showJoinInput, setShowJoinInput] = useState<boolean>(false);
+    const [gameCode, setGameCode] = useState<string>('');
 
     // Mock games data - this would come from your SignalR hub
-    const liveGames = [
+    const liveGames: LiveGame[] = [
         {
             id: 'game-1',
             gameMode: 'Classic Mode',
@@ -55,15 +56,15 @@ function MainPage() {
         (currentPage + 1) * gamesPerPage
     );
 
-    const nextPage = () => {
+    const nextPage = (): void => {
         setCurrentPage((prev) => (prev + 1) % pageCount);
     };
 
-    const prevPage = () => {
+    const prevPage = (): void => {
         setCurrentPage((prev) => (prev - 1 + pageCount) % pageCount);
     };
 
-    const handleJoinGame = () => {
+    const handleJoinGame = (): void => {
         if (gameCode.trim()) {
             console.log(`Joining game with code: ${gameCode}`);
             // Here you would call your API to join the game
@@ -90,9 +91,9 @@ function MainPage() {
                                             type="text" 
                                             placeholder="Enter game code" 
                                             value={gameCode}
-                                            onChange={(e) => setGameCode(e.target.value)}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) => setGameCode(e.target.value)}
                                             className="game-code-input"
-                                            onKeyPress={(e) => e.key === 'Enter' && handleJoinGame()}
+                                            onKeyPress={(e: KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleJoinGame()}
                                         />
                                         <button 
                                             className="game-code-submit" 
@@ -153,7 +154,7 @@ function MainPage() {
                     )}
 
                     <div className={`games-container ${liveGames.length <= 2 ? 'few-items' : ''}`}>
-                        {visibleGames.map((game) => (
+                        {visibleGames.map((game: LiveGame) => (
                             <div className="game-card" key={game.id}>
                                 <div className="game-header">
                                     <h3>{game.gameMode}</h3>
