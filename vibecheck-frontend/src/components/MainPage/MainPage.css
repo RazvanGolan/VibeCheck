@@ -73,6 +73,10 @@
     min-width: 160px;
 }
 
+input:focus {
+    outline: none;
+}
+
 .game-code-submit {
     background-color: #49525f;
     color: white;

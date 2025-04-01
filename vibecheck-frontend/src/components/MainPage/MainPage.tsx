@@ -1,7 +1,7 @@
 import { useState, KeyboardEvent, ChangeEvent } from 'react';
 import './MainPage.css';
-import { useAuth } from '../context/AuthProvider';
-import { LiveGame } from '../types/gameTypes';
+import { useAuth } from '../../context/AuthProvider';
+import { LiveGame } from '../../types/gameTypes';
 
 function MainPage() {
     const { isAuthenticated } = useAuth();

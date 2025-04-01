@@ -1,7 +1,7 @@
 import './App.css';
-import Layout from './components/layout/Layout';
-import MainPage from './components/MainPage';
-import Login from './components/Login';
+import Layout from './components/Layout/Layout';
+import MainPage from './components/MainPage/MainPage';
+import Login from './components/LoginPage/Login';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 
