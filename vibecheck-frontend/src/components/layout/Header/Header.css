@@ -1,0 +1,112 @@
+.header {
+    display: flex;
+    padding: 15px 40px;
+    border-bottom: 1px solid #f0f0f0;
+    justify-content: space-between;
+}
+
+.logo-small {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.music-icon {
+    font-size: 24px;
+    margin-right: 5px;
+}
+
+.auth-section {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile {
+    position: relative;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    min-width: 100px;
+}
+
+.user-profile:hover .dropdown-menu {
+    display: block;
+    opacity: 1;
+    pointer-events: all;
+}
+
+.dropdown-item {
+    padding: 8px 5px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f1f1;
+}
+
+.avatar-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.dropdown-arrow {
+    width: 28px;
+    height: 24px;
+    transition: transform 0.2s;
+}
+
+.user-profile:hover .dropdown-arrow {
+    transform: rotate(90deg);
+}
+
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    right: 0;
+    width: 100%;
+    height: 10px;
+}
+
+.sign-in-button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #111828;
+    color: white;
+    border: none;
+    font-weight: 500;
+}
+
+@media screen and (max-width: 600px) {
+    .header {
+        padding: 10px 30px;
+    }
+
+    .title {
+        font-size: 16px !important;
+    }
+
+    .music-icon {
+        font-size: 20px !important;
+    }
+}

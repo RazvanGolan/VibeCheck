@@ -1,30 +1,32 @@
-import React from 'react';
 import './App.css';
-import Login from './components/Login';
-//  import CreateRoom from './components/CreateRoom';        TO BE IMPLEMENTED 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout/Layout';
+import MainPage from './components/MainPage/MainPage';
+import Login from './components/LoginPage/Login';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthProvider';
 
 function App() {
   return (
     <div className="App">
+    <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MainPage />} />
-          <Route path="/login" element={<Login />} />
-           {/* <Route path="/create-room" element={<CreateRoom />} />    TO BE IMPLEMENTED   */}
-        </Routes>
-      </BrowserRouter>
+          <Routes>
+            <Route path="/" element={
+              <Layout>
+                <MainPage />
+              </Layout>
+            } />
+            <Route path="/login" element={
+              <Layout hideProfileSection={true}>
+                <Login /> 
+              </Layout> 
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+    </AuthProvider>
     </div>
   );
 }
-
-const MainPage = () => {
-  return (
-    <div>
-      <h1>VibeCheck Homepage</h1>
-      {/* CHANNGE THIS */}
-    </div>
-  );
-};
 
 export default App;
