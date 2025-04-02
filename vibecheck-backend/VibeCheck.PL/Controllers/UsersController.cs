@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Users;
 
@@ -9,10 +10,12 @@ namespace VibeCheck.PL.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
-        public UsersController(IUserService userService)
+        public UsersController(IUserService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
         [HttpGet("GetUsers")]
@@ -46,7 +49,15 @@ namespace VibeCheck.PL.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        
+        [HttpPost("Login")]
+        public async Task<IActionResult> Login(LoginUserDto loginDto)
+        {
+            var response = await _authService.LoginAsync(loginDto);
+            return Ok(response);
+        }
 
+        [Authorize]
         [HttpPut("UpdateUser/{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto User)
         {
@@ -61,6 +72,7 @@ namespace VibeCheck.PL.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("DeleteUser/{id}")]
         public async Task<IActionResult> DeleteUser(Guid id)
         {
