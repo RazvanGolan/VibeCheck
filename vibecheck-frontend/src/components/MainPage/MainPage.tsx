@@ -2,12 +2,14 @@ import { useState, KeyboardEvent, ChangeEvent } from 'react';
 import './MainPage.css';
 import { useAuth } from '../../context/AuthProvider';
 import { LiveGame } from '../../types/gameTypes';
+import { useNavigate} from 'react-router-dom';
 
 function MainPage() {
     const { isAuthenticated } = useAuth();
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [showJoinInput, setShowJoinInput] = useState<boolean>(false);
     const [gameCode, setGameCode] = useState<string>('');
+    const navigate = useNavigate();
 
     // Mock games data - this would come from your SignalR hub
     const liveGames: LiveGame[] = [
@@ -73,6 +75,10 @@ function MainPage() {
         }
     };
 
+    const handleCreateGame = (): void => {
+        navigate('/creategame');
+    }
+
     return (
         <div className="container">
             <div className="start-playing">
@@ -82,7 +88,7 @@ function MainPage() {
                     
                     {isAuthenticated ? (
                         <div className="auth-buttons">
-                            <button className="play-button create">Create a Room</button>
+                            <button className="play-button create" onClick={handleCreateGame}>Create a Room</button>
                             
                             <div className="join-container">
                                 {showJoinInput ? (

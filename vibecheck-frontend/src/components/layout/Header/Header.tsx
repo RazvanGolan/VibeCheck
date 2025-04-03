@@ -1,5 +1,6 @@
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
+import { useNavigate} from 'react-router-dom';
 import React from 'react';
 
 interface HeaderProps {
@@ -8,9 +9,11 @@ interface HeaderProps {
 
 function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement {
     const { isAuthenticated, user, signIn, signOut } = useAuth();
+    const navigate = useNavigate();
 
     const handleSignIn = async (): Promise<void> => {
         await signIn("guest");
+        navigate('/login');
     };
 
     return (

@@ -10,6 +10,7 @@ const Login = () => {
     e.preventDefault();
     // Handle login logic here
     console.log('Login attempt with username:', username);
+    navigate('/')
   };
 
   return (
@@ -34,7 +35,7 @@ const Login = () => {
             </div>
 
             <div className="button-group">
-              <button type="submit" className="submit-button">Submit</button>
+              <button type="submit" className="submit-button" onClick={handleSubmit}>Submit</button>
             </div>
           </form>
 

@@ -61,7 +61,7 @@ const CreateRoom = () => {
   };
 
   const handleBack = () => {
-    navigate('/login');
+    navigate('/');
   };
 
   return (
