@@ -68,6 +68,12 @@
     border-radius: 4px;
     font-size: 16px;
     text-align: center;
+    transition: border-color 0.3s ease;
+  }
+  
+  input:focus, select:focus {
+    outline: none;
+    border-color: #0f172a;
   }
   
   .theme-section, .custom-themes-section {
@@ -126,6 +132,12 @@
     cursor: pointer;
     font-weight: 500;
     min-width: 80px;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .add-button:hover {
+    background-color: #1e293b;
+    transform: translateY(-1px);
   }
   
   .custom-themes-list {
@@ -153,6 +165,13 @@
     font-size: 18px;
     margin-left: 5px;
     padding: 0 5px;
+    color: #64748b;
+    transition: color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .remove-button:hover {
+    color: #ef4444;
+    transform: scale(1.1);
   }
   
   .form-actions {
@@ -173,6 +192,12 @@
     font-weight: 500;
     cursor: pointer;
     min-width: 150px;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .back-button:hover {
+    background-color: #cbd5e1;
+    transform: translateY(-1px);
   }
   
   .create-game-button {
@@ -185,6 +210,12 @@
     font-weight: 500;
     cursor: pointer;
     min-width: 150px;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+  }
+  
+  .create-game-button:hover {
+    background-color: #1e293b;
+    transform: translateY(-1px);
   }
   
   @media screen and (max-width: 768px) {
@@ -233,6 +264,7 @@
       gap: 10px;
       text-align: center;
     }
+
   }
   
   @media screen and (max-width: 480px) {

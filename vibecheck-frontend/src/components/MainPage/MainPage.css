@@ -40,10 +40,12 @@
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.1s ease;
 }
 
 .play-button:hover {
-    background-color: darkgrey;
+    background-color: #f0f0f0;
+    transform: translateY(-1px);
 }
 
 .auth-buttons {
@@ -55,6 +57,10 @@
     background-color: transparent;
     border: 1px solid white;
     color: white;
+}
+
+.play-button.join:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .join-input-group {
@@ -85,6 +91,12 @@ input:focus {
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.game-code-submit:hover {
+    background-color: #64748b;
+    transform: translateY(-1px);
 }
 
 .intro {
@@ -114,12 +126,13 @@ input:focus {
     align-items: center;
     padding: 30px 20px;
     border-radius: 12px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 
 .step:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    transform: translateY(-8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    background-color: #f8fafc;
 }
 
 .step-icon {
@@ -181,7 +194,7 @@ input:focus {
     gap: 20px;
     width: 100%;
     overflow-x: auto; 
-    padding: 10px 0;
+    padding: 10px 0 15px 0;
 }
 
 .games-container.few-items {
@@ -196,6 +209,12 @@ input:focus {
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     padding: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
 }
 
 .game-header {
@@ -274,7 +293,13 @@ input:focus {
     font-weight: 500;
     width: 100%;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+}
+
+.join-button:hover {
+    background-color: #1f2937;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .carousel-arrow {
@@ -291,7 +316,7 @@ input:focus {
     align-items: center;
     font-size: 18px;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 .carousel-arrow:hover {
@@ -319,9 +344,19 @@ input:focus {
     border-radius: 50%;
     background-color: #cbd5e1;
     cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.dot:hover {
+    transform: scale(1.3);
+    background-color: #94a3b8;
 }
 
 .dot.active {
+    background-color: #0f172a;
+}
+
+.dot.active:hover {
     background-color: #0f172a;
 }
 
@@ -331,6 +366,17 @@ input:focus {
     padding: 60px;
     text-align: center;
     margin-top: 40px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .community-content {

@@ -12,11 +12,10 @@ const CreateRoom = () => {
   const username = state?.username || '';
   const navigate = useNavigate();
 
-  const [gameName, setGameName] = useState('');
   const [gameMode, setGameMode] = useState('Classic Mode');
   const [rounds, setRounds] = useState('3 Rounds');
   const [timePerRound, setTimePerRound] = useState('1 Minute');
-  const [playersLimit, setPlayersLimit] = useState('8');
+  const [playersLimit, setPlayersLimit] = useState('4');
   const [privacy, setPrivacy] = useState('Public');
   const [themes, setThemes] = useState<string[]>([]);
   const [customThemes, setCustomThemes] = useState<string[]>([]);
@@ -48,21 +47,25 @@ const CreateRoom = () => {
 
   const handleCreateGame = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Game created with settings:', {
-      gameName,
+    const gameSettings: any = {
       gameMode,
       rounds,
       timePerRound,
       playersLimit,
       privacy,
-      themes,
-      customThemes
-    });
+      customThemes,
+    };
+    if (gameMode !== 'Classic Mode') {
+      gameSettings.themes = themes;
+    }
+    console.log('Game created with settings:', gameSettings);
   };
 
   const handleBack = () => {
     navigate('/');
   };
+
+  const showThemeCategories = gameMode !== 'Classic Mode';
 
   return (
     <div className="create-room-container">
@@ -73,18 +76,6 @@ const CreateRoom = () => {
 
           <form onSubmit={handleCreateGame} className="create-room-form">
             <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="gameName">Game Name</label>
-                <input 
-                  type="text" 
-                  id="gameName" 
-                  placeholder="Enter game name" 
-                  value={gameName}
-                  onChange={(e) => setGameName(e.target.value)}
-                  required
-                />
-              </div>
-
               <div className="form-group">
                 <label htmlFor="gameMode">Game Mode</label>
                 <select 
@@ -153,22 +144,24 @@ const CreateRoom = () => {
               </div>
             </div>
 
-            <div className="theme-section">
-              <label>Theme Categories</label>
-              <div className="theme-options">
-                {themeCategories.map(theme => (
-                  <div key={theme} className="theme-checkbox">
-                    <input
-                      type="checkbox"
-                      id={theme}
-                      checked={themes.includes(theme)}
-                      onChange={() => handleThemeToggle(theme)}
-                    />
-                    <label htmlFor={theme}>{theme}</label>
-                  </div>
-                ))}
+            {showThemeCategories && (
+              <div className="theme-section">
+                <label>Theme Categories</label>
+                <div className="theme-options">
+                  {themeCategories.map(theme => (
+                    <div key={theme} className="theme-checkbox">
+                      <input
+                        type="checkbox"
+                        id={theme}
+                        checked={themes.includes(theme)}
+                        onChange={() => handleThemeToggle(theme)}
+                      />
+                      <label htmlFor={theme}>{theme}</label>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="custom-themes-section">
               <label>Custom Themes</label>
