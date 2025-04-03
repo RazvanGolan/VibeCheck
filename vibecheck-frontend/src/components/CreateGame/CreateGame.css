@@ -125,19 +125,21 @@
   
   .add-button {
     padding: 10px 15px;
-    background-color: #0f172a;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 500;
     min-width: 80px;
-    transition: background-color 0.3s ease, transform 0.1s ease;
+    transition: filter 0.3s ease, transform 0.1s ease;
+    background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+    background-size: 300% 300%;
+    animation: gradientBG 8s ease infinite;
   }
   
   .add-button:hover {
-    background-color: #1e293b;
     transform: translateY(-1px);
+    filter: brightness(1.2);
   }
   
   .custom-themes-list {
@@ -202,7 +204,6 @@
   
   .create-game-button {
     padding: 12px 30px;
-    background-color: #0f172a;
     color: white;
     border: none;
     border-radius: 4px;
@@ -210,12 +211,21 @@
     font-weight: 500;
     cursor: pointer;
     min-width: 150px;
-    transition: background-color 0.3s ease, transform 0.1s ease;
+    transition: filter 0.3s ease, transform 0.1s ease;
+    background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+    background-size: 300% 300%;
+    animation: gradientBG 8s ease infinite;
   }
   
   .create-game-button:hover {
-    background-color: #1e293b;
     transform: translateY(-1px);
+    filter: brightness(1.2);
+  }
+  
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
   
   @media screen and (max-width: 768px) {
