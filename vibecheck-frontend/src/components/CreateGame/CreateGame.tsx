@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import '../styles/CreateRoom.css';
+import './CreateGame.css';
 
 interface LocationState {
   username?: string;
@@ -67,12 +67,6 @@ const CreateRoom = () => {
   return (
     <div className="create-room-container">
       <div className="create-room-card">
-        <div className="header">
-          <div className="logo-small">
-            <span className="music-icon">♪</span>
-            <span>VibeCheck</span>
-          </div>
-        </div>
 
         <div className="create-room-content">
           <h1>Create New Game</h1>
@@ -218,14 +212,6 @@ const CreateRoom = () => {
               </button>
             </div>
           </form>
-        </div>
-
-        <div className="footer">
-          <div className="logo-small">
-            <span className="music-icon">♪</span>
-            <span>VibeCheck</span>
-          </div>
-          <p className="copyright">© 2025 VibeCheck. All rights reserved.</p>
         </div>
       </div>
     </div>
