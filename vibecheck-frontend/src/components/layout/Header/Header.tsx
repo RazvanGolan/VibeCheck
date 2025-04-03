@@ -1,16 +1,18 @@
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   hideProfileSection?: boolean;
 }
 
 function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement {
-    const { isAuthenticated, user, signIn, signOut } = useAuth();
+    const { isAuthenticated, user, signOut } = useAuth();
+    const navigate = useNavigate();
 
-    const handleSignIn = async (): Promise<void> => {
-        await signIn("guest");
+    const handleNavigateToLogin = (): void => {
+        navigate('/login');
     };
 
     return (
@@ -42,7 +44,7 @@ function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement
                         </div>
                     </div>
                 ) : (
-                    <button onClick={handleSignIn} className="sign-in-button">Sign In</button>
+                    <button onClick={handleNavigateToLogin} className="sign-in-button">Sign In</button>
                 )
             )}
         </header>

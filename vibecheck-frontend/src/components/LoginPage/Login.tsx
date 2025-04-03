@@ -1,15 +1,40 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthProvider';
 import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log('Login attempt with username:', username);
+    
+    // Validate username
+    if (!username.trim()) {
+      setErrorMessage('Username is required');
+      return;
+    }
+    
+    setLoading(true);
+    setErrorMessage(''); // Clear previous errors
+    
+    try {
+      const success = await signIn(username);
+      if (success) {
+        navigate('/');
+      } else {
+        setErrorMessage('Login failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrorMessage('An error occurred during login.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,13 +53,25 @@ const Login = () => {
                 id="username" 
                 placeholder="Enter your username" 
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (errorMessage && e.target.value.trim()) {
+                    setErrorMessage('');
+                  }
+                }}
               />
             </div>
 
+            {errorMessage && (
+              <div className="error-message">
+                {errorMessage}
+              </div>
+            )}
+
             <div className="button-group">
-              <button type="submit" className="submit-button">Submit</button>
+              <button type="submit" className="submit-button" disabled={loading}>
+                {loading ? 'Logging in...' : 'Submit'}
+              </button>
             </div>
           </form>
 
@@ -44,4 +81,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
