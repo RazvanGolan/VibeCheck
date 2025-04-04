@@ -27,19 +27,13 @@ public class AuthService : IAuthService
     
     public async Task<AuthResponseDto> LoginAsync(LoginUserDto loginDto)
     {
-        var users = await _userRepository.GetAllAsync();
-        var user = users.FirstOrDefault(u => u.Username == loginDto.Username);
-
-        if (user == null)
+        var user = new User
         {
-            user = new User
-            {
-                UserId = Guid.NewGuid(),
-                Username = loginDto.Username,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _userRepository.AddAsync(user);
-        }
+            UserId = Guid.NewGuid(),
+            Username = loginDto.Username,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _userRepository.AddAsync(user);
 
         var token = GenerateJwtToken(user);
         
@@ -50,6 +44,7 @@ public class AuthService : IAuthService
         };
     }
 
+    # region Private Methods
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
@@ -71,4 +66,5 @@ public class AuthService : IAuthService
         var tokenHandler = new JsonWebTokenHandler();
         return tokenHandler.CreateToken(tokenDescriptor);
     }
+    # endregion
 }

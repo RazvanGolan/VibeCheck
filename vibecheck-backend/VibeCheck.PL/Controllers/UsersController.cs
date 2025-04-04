@@ -51,7 +51,7 @@ namespace VibeCheck.PL.Controllers
         }
         
         [HttpPost("Login")]
-        public async Task<IActionResult> Login(LoginUserDto loginDto)
+        public async Task<IActionResult> Login([FromBody] LoginUserDto loginDto)
         {
             var response = await _authService.LoginAsync(loginDto);
             return Ok(response);
