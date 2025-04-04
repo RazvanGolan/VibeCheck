@@ -12,7 +12,7 @@ namespace VibeCheck.DAL.Entities
 
         public int Status { get; set; } // enum poate sau (0-waiting, 1-active, 2-finished)
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
 
         // Navigation properties
 

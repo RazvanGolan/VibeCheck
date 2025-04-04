@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.BL.Mapper;
 using VibeCheck.BL.Services;
@@ -10,7 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // convert enums to strings to see them in response
+    });
 
 //builder.Services.AddControllers().AddJsonOptions(options =>
 //{
@@ -41,6 +46,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>(); // register repository for User entity
 builder.Services.AddTransient<IUserService, UserService>(); // register service for User entity
 builder.Services.AddAutoMapper(typeof(UserProfile)); // register automapper
+
+builder.Services.AddTransient<IRepository<Game>, BaseRepository<Game>>(); // register repository for Game entity
+builder.Services.AddTransient<IGameService, GameService>(); // register service for Game entity
+builder.Services.AddAutoMapper(typeof(GameProfile)); // register automapper
 
 var app = builder.Build();
 
