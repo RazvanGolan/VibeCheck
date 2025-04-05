@@ -1,6 +1,4 @@
-﻿
-
-namespace VibeCheck.DAL.Entities
+﻿namespace VibeCheck.DAL.Entities
 {
     public class User
     {
