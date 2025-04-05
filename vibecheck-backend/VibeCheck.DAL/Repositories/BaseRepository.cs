@@ -2,18 +2,18 @@
 
 namespace VibeCheck.DAL.Repositories
 {
-    public class BaseRepository<IEntity> : IRepository<IEntity> where IEntity : class
+    public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : class
     {
-        protected readonly VibeCheckContext _context;
-        protected readonly DbSet<IEntity> _dbSet;
+        private readonly VibeCheckContext _context;
+        private readonly DbSet<TEntity> _dbSet;
 
-        public BaseRepository(VibeCheckContext _context)
+        public BaseRepository(VibeCheckContext context)
         {
-            this._context = _context;
-            _dbSet = _context.Set<IEntity>(); // cache the dbSet for performance
+            this._context = context;
+            _dbSet = context.Set<TEntity>(); // cache the dbSet for performance
         }
 
-        public virtual async Task<IEnumerable<IEntity>> GetAllAsync()
+        public virtual async Task<IEnumerable<TEntity>> GetAllAsync()
         {
             try
             {
@@ -25,7 +25,7 @@ namespace VibeCheck.DAL.Repositories
             }
         }
 
-        public virtual async Task<IEntity?> GetByIdAsync(Guid id)
+        public virtual async Task<TEntity?> GetByIdAsync(Guid id)
         {
             try
             {
@@ -37,7 +37,7 @@ namespace VibeCheck.DAL.Repositories
             }
         }
 
-        public virtual async Task<IEntity> AddAsync(IEntity entity)
+        public virtual async Task<TEntity> AddAsync(TEntity entity)
         {
             try
             {
@@ -51,7 +51,7 @@ namespace VibeCheck.DAL.Repositories
             }
         }
 
-        public virtual async Task<IEntity> UpdateAsync(IEntity entity)
+        public virtual async Task<TEntity> UpdateAsync(TEntity entity)
         {
             try
             {

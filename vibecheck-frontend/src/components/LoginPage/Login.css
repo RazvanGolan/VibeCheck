@@ -44,7 +44,7 @@ h1 {
 .form-group {
   width: 100%;
   max-width: 300px;
-  margin-bottom: 20px;
+  margin-bottom: 2px;
 }
 
 label {
@@ -120,6 +120,15 @@ input:focus {
   font-weight: 500;
 }
 
+.error-message {
+  color: #ff3333;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  padding: 5px;
+  text-align: center;
+}
+
 @media screen and (max-width: 480px) {
   .login-content {
     padding: 15px;
@@ -145,4 +154,4 @@ input:focus {
   .submit-button {
     font-size: 12px;
   }
-} 
+}

@@ -12,7 +12,7 @@ const CreateRoom = () => {
   const state = location.state as LocationState;
   const username = state?.username || '';
   const navigate = useNavigate();
-
+  
   const [gameMode, setGameMode] = useState<GameMode>(defaultGameSettings.gameMode);
   const [rounds, setRounds] = useState<number>(defaultGameSettings.rounds);
   const [timePerRound, setTimePerRound] = useState<number>(defaultGameSettings.timePerRound);
