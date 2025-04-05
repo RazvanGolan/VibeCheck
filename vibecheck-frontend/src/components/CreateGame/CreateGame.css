@@ -2,7 +2,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
     background-color: #f5f5f5;
   }
   
@@ -101,13 +100,19 @@
   }
   
   .theme-checkbox input[type="checkbox"] {
-    width: auto;
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: 0.5em;
+    cursor: pointer;
+    accent-color: #0f172a;
   }
   
   .theme-checkbox label {
     margin-bottom: 0;
     text-align: left;
     width: auto;
+    cursor: pointer;
+    color: #334155;
   }
   
   .custom-theme-input {
@@ -121,6 +126,7 @@
   
   .custom-theme-input input {
     max-width: 400px;
+    text-align: left;
   }
   
   .add-button {
@@ -302,5 +308,21 @@
     .theme-options {
       grid-template-columns: 1fr;
     }
+  }
+  
+  .custom-themes-section > label {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 15px;
+  }
+  
+  .theme-feedback {
+    font-size: 0.85rem;
+    margin-top: 8px; 
+    min-height: 1.2em; /* Reserve space to prevent layout jumps */
+  }
+  
+  .theme-feedback.error {
+    color: #dc2626; /* Red color for errors */
   }
   

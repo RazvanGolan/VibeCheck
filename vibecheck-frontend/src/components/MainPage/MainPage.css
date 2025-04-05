@@ -81,6 +81,7 @@
     padding: 14px 15px;
     font-size: 16px;
     min-width: 160px;
+    text-align: left;
 }
 
 input:focus {

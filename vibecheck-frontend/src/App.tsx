@@ -23,7 +23,7 @@ function App() {
               </Layout> 
             } />
              <Route path="/creategame" element={
-              <Layout hideProfileSection={true}>
+              <Layout >
                 <CreateGame /> 
               </Layout> 
             } />
