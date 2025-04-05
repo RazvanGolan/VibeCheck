@@ -16,7 +16,7 @@ const CreateRoom = () => {
   const [gameMode, setGameMode] = useState<GameMode>(defaultGameSettings.gameMode);
   const [rounds, setRounds] = useState<number>(defaultGameSettings.rounds);
   const [timePerRound, setTimePerRound] = useState<number>(defaultGameSettings.timePerRound);
-  const [playersLimit, setPlayersLimit] = useState<string>(defaultGameSettings.playersLimit);
+  const [playersLimit, setPlayersLimit] = useState<number>(defaultGameSettings.playersLimit);
   const [privacy, setPrivacy] = useState<string>(defaultGameSettings.privacy);
   const [selectedThemeCategories, setSelectedThemeCategories] = useState<string[]>(defaultGameSettings.selectedThemeCategories);
   const [customThemes, setCustomThemes] = useState<string[]>(defaultGameSettings.customThemes);
@@ -54,7 +54,7 @@ const CreateRoom = () => {
     }
     
     if (customThemes.includes(themeToAdd)) {
-      setThemeFeedback(`"${themeToAdd}" already added!`);
+      setThemeFeedback(`Theme "${themeToAdd}" already added!`);
       return;
     }
 
@@ -90,11 +90,14 @@ const CreateRoom = () => {
   const showThemeCategories = gameMode !== GameMode.Classic;
 
   const handleNumberChange = (setter: React.Dispatch<React.SetStateAction<number>>) => 
-                           (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10);
-    if (e.target.value === '' || !isNaN(value)) {
-       setter(isNaN(value) ? 0 : value);
-    }
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.value === '') {
+        setter('' as unknown as number);
+      }
+      const value = parseInt(e.target.value, 10);
+      if (!isNaN(value)) {
+        setter(value);
+      }
   };
 
   return (
@@ -156,9 +159,10 @@ const CreateRoom = () => {
                   type="number" 
                   id="playersLimit" 
                   value={playersLimit}
-                  onChange={(e) => setPlayersLimit(e.target.value)}
+                  onChange={handleNumberChange(setPlayersLimit)}
                   min="2"
                   max="16"
+                  required
                 />
               </div>
 
@@ -211,7 +215,7 @@ const CreateRoom = () => {
                   Add
                 </button>
               </div>
-              {themeFeedback && <p className="theme-feedback error">{themeFeedback}</p>}
+              {themeFeedback && <p className="input-feedback error">{themeFeedback}</p>}
               <div className="custom-themes-list">
                 {customThemes.map(theme => (
                   <div key={theme} className="custom-theme-tag">

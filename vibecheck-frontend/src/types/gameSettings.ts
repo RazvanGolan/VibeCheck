@@ -1,5 +1,3 @@
-// src/types/gameSettings.ts
-
 // TODO: Confirm with backend (@BogdanNuExista) how game modes should be represented (enum, string, number?)
 // Defining as an enum for now for frontend type safety.
 export enum GameMode {
@@ -13,7 +11,7 @@ export interface GameSettings {
   gameMode: GameMode;
   rounds: number;
   timePerRound: number;
-  playersLimit: string; 
+  playersLimit: number; 
   privacy: string;
   selectedThemeCategories: string[];
   customThemes: string[];
@@ -24,7 +22,7 @@ export const defaultGameSettings: GameSettings = {
   gameMode: GameMode.Classic,
   rounds: 3,
   timePerRound: 60,
-  playersLimit: '4', 
+  playersLimit: 4, 
   privacy: 'Public',
   selectedThemeCategories: [],
   customThemes: [],

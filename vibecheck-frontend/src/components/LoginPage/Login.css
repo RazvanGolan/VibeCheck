@@ -68,6 +68,11 @@ input:focus {
   border-color: #0f172a;
 }
 
+#username {
+  text-align: left;
+  padding: 10px 15px;
+}
+
 .button-group {
   width: 100%;
   max-width: 300px;

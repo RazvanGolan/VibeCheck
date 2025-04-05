@@ -95,7 +95,6 @@
   .theme-checkbox {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
   }
   
@@ -105,6 +104,7 @@
     margin-right: 0.5em;
     cursor: pointer;
     accent-color: #0f172a;
+    flex-shrink: 0;
   }
   
   .theme-checkbox label {
@@ -113,6 +113,7 @@
     width: auto;
     cursor: pointer;
     color: #334155;
+    white-space: nowrap;
   }
   
   .custom-theme-input {
@@ -316,13 +317,13 @@
     margin-bottom: 15px;
   }
   
-  .theme-feedback {
+  .input-feedback {
     font-size: 0.85rem;
     margin-top: 8px; 
     min-height: 1.2em; /* Reserve space to prevent layout jumps */
   }
   
-  .theme-feedback.error {
+  .input-feedback.error {
     color: #dc2626; /* Red color for errors */
   }
   
