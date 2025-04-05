@@ -8,12 +8,14 @@ const AuthContext = createContext<{
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
+  loading: boolean;
   signIn: (username: string) => Promise<boolean>;
   signOut: () => void;
 }>({
   isAuthenticated: false,
   user: null,
   token: null,
+  loading: true,
   signIn: async () => false,
   signOut: () => {}
 });
@@ -22,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token');
@@ -32,6 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
     }
+
+    setLoading(false);
   }, []);
 
   const signIn = async (username: string) => {
@@ -76,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, signIn, signOut }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

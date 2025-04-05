@@ -60,6 +60,17 @@ input {
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 16px;
+  transition: border-color 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #0f172a;
+}
+
+#username {
+  text-align: left;
+  padding: 10px 15px;
 }
 
 .button-group {
@@ -79,16 +90,22 @@ input {
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.submit-button {
-  background-color: #0f172a;
   color: white;
+  transition: filter 0.3s ease, transform 0.1s ease;
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  background-size: 300% 300%;
+  animation: gradientBG 8s ease infinite;
 }
 
 .submit-button:hover {
-  background-color: #1e293b;
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 .signup-option {

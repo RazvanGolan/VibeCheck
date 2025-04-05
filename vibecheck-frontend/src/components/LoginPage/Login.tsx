@@ -1,31 +1,38 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import './Login.css';
+
+interface LocationState {
+  from?: string;
+}
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { signIn } = useAuth();
+
+  const state = location.state as LocationState;
+  const from = state?.from || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate username
     if (!username.trim()) {
       setErrorMessage('Username is required');
       return;
     }
     
     setLoading(true);
-    setErrorMessage(''); // Clear previous errors
+    setErrorMessage('');
     
     try {
       const success = await signIn(username);
       if (success) {
-        navigate('/');
+        navigate(from);
       } else {
         setErrorMessage('Login failed. Please try again.');
       }

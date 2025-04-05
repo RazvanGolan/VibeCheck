@@ -1,7 +1,7 @@
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
+import { useNavigate} from 'react-router-dom';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   hideProfileSection?: boolean;
