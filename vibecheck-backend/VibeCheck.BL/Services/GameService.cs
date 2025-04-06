@@ -27,11 +27,7 @@ namespace VibeCheck.BL.Services
                 throw new InvalidOperationException("A game with the same code already exists.");
             }
 
-            // check for length of code
-            if (createGameDto.Code.Length > 6)
-            {
-                throw new InvalidOperationException("Code must be up to 6 characters long");
-            }
+            // the length of the code is checked in the CreateGameDto with [MaxLength(6)] attribute
 
             var game = _mapper.Map<Game>(createGameDto);
             game.Status = (int)GameStatus.Waiting; // default status is waiting for players
