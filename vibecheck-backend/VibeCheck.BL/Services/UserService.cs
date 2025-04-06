@@ -32,10 +32,10 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<IEnumerable<UserDto>>(users);
         }
 
-        public async Task<UserDto> GetUserByIdAsync(Guid id)
+        public async Task<UserDto?> GetUserByIdAsync(Guid id)
         {
             var user = await _userRepository.GetByIdAsync(id);
-            return _mapper.Map<UserDto>(user);
+            return _mapper.Map<UserDto?>(user);
         }
 
         public async Task<UserDto> UpdateUserAsync(Guid id, UpdateUserDto updateUserDto)
