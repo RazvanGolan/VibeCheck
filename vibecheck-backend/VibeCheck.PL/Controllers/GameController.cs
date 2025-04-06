@@ -63,6 +63,10 @@ namespace VibeCheck.PL.Controllers
             {
                 return NotFound(ex.Message);
             }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("DeleteGame/{id}")]

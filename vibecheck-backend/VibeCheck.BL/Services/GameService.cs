@@ -60,9 +60,9 @@ namespace VibeCheck.BL.Services
             {
                 throw new KeyNotFoundException($"Game with id {id} not found");
             }
-            if(updateGameDto.Status != GameStatus.Waiting && updateGameDto.Status != GameStatus.Active && updateGameDto.Status != GameStatus.Finished)
+            if (!Enum.IsDefined(typeof(GameStatus), updateGameDto.Status))
             {
-                throw new InvalidOperationException("Invalid game status");
+                throw new InvalidOperationException("Invalid game status, status must be: Waiting(0), Active(1), or Finished(2)");
             }
 
             game.Status = (int)updateGameDto.Status; // or game = _mapper.Map(updateGameDto, game);
