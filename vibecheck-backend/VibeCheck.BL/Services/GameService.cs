@@ -95,21 +95,16 @@ namespace VibeCheck.BL.Services
 
             game.Participants.Remove(user);
 
-            if (game.HostUserId == userId)
+            // if no participants left we delete the game
+            if (game.Participants.Count == 0)
             {
-                game.HostUserId = game.Participants.FirstOrDefault()?.UserId ?? Guid.Empty;
-                if (game.HostUserId == Guid.Empty)
-                {
-                    await _gameRepository.DeleteByIdAsync(gameId);
-                    return _mapper.Map<GameDto>(game);
-                }
+                await _gameRepository.DeleteByIdAsync(gameId);
+                return _mapper.Map<GameDto>(game);
             }
 
             await _gameRepository.UpdateAsync(game);
             return _mapper.Map<GameDto>(game);
         }
-
-
 
         #region Private Methods
 
@@ -122,7 +117,7 @@ namespace VibeCheck.BL.Services
             {
                 code = new string(Enumerable.Repeat(chars, 6)
                     .Select(s => s[_random.Next(s.Length)]).ToArray());
-            } while (_gameRepository.GetAllAsync().Result.Any(g => g.Code == code));
+            } while (_gameRepository.GetAllAsync().Result.Any(g => g.Code == code)); // generate random code until unique
 
             return code;
         }
