@@ -18,19 +18,33 @@ namespace VibeCheck.PL.Controllers
         [HttpGet("GetGame/{id}")]
         public async Task<IActionResult> GetGame(Guid id)
         {
-            var game = await _gameService.GetGameByIdAsync(id);
-            if (game == null)
+            try
+            {
+                var game = await _gameService.GetGameByIdAsync(id);
+                return Ok(game);
+            }
+            catch (KeyNotFoundException)
             {
                 return NotFound();
             }
-            return Ok(game);
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("GetGames")]
         public async Task<IActionResult> GetGames()
         {
-            var games = await _gameService.GetGamesAsync();
-            return Ok(games);
+            try
+            {
+                var games = await _gameService.GetGamesAsync();
+                return Ok(games);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("AddGame")]
@@ -45,18 +59,18 @@ namespace VibeCheck.PL.Controllers
             {
                 return BadRequest(ex.Message);
             }
-            catch
+            catch (Exception ex)
             {
-                return StatusCode(500, "An unexpected error occured");
+                return BadRequest(ex.Message);
             }
         }
 
         [HttpPut("UpdateGame/{id}")]
-        public async Task<IActionResult> UpdateGame(Guid id, [FromBody] UpdateGameDto game)
+        public async Task<IActionResult> UpdateGame(Guid id, [FromBody] UpdateGameDto gameDto)
         {
             try
             {
-                var updatedGame = await _gameService.UpdateGameAsync(id, game);
+                var updatedGame = await _gameService.UpdateGameAsync(id, gameDto);
                 return Ok(updatedGame);
             }
             catch (KeyNotFoundException ex)
@@ -64,6 +78,10 @@ namespace VibeCheck.PL.Controllers
                 return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
@@ -82,6 +100,54 @@ namespace VibeCheck.PL.Controllers
                 return NotFound(ex.Message);
             }
             catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {   
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("JoinGame/{gameId}/{userId}")]
+        public async Task<IActionResult> JoinGame(Guid gameId, Guid userId)
+        {
+            try
+            {
+                var result = await _gameService.JoinGameAsync(gameId, userId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }   
+        }
+
+        [HttpPost("LeaveGame/{gameId}/{userId}")]
+        public async Task<IActionResult> LeaveGame(Guid gameId, Guid userId)
+        {
+            try
+            {
+                var result = await _gameService.LeaveGameAsync(gameId, userId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }

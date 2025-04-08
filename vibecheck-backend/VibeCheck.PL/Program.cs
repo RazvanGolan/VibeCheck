@@ -71,7 +71,7 @@ builder.Services.AddAuthentication(x =>
         };
     });
 
-builder.Services.AddTransient<IRepository<Game>, BaseRepository<Game>>(); // register repository for Game entity
+builder.Services.AddTransient<IRepository<Game>, GameRepository>(); // register repository for Game entity
 builder.Services.AddTransient<IGameService, GameService>(); // register service for Game entity
 builder.Services.AddAutoMapper(typeof(GameProfile)); // register automapper
 

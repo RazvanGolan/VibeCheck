@@ -19,7 +19,7 @@ namespace VibeCheck.DAL.Configurations
 
             // relationship with Game
             builder.HasOne(r => r.Game)
-                .WithMany(g => g.Rounds)
+                .WithMany(g => g.RoundsList)
                 .HasForeignKey(r => r.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
 

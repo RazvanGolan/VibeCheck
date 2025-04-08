@@ -8,8 +8,8 @@ namespace VibeCheck.DAL.Enums
 {
     public enum GameStatus
     {
-        Waiting = 0,
-        Active = 1,
-        Finished = 2
+        Waiting,
+        Active,
+        Finished 
     }
 }
