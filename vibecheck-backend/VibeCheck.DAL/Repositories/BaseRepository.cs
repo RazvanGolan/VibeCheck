@@ -4,8 +4,8 @@ namespace VibeCheck.DAL.Repositories
 {
     public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : class
     {
-        private readonly VibeCheckContext _context;
-        private readonly DbSet<TEntity> _dbSet;
+        protected readonly VibeCheckContext _context;
+        protected readonly DbSet<TEntity> _dbSet;
 
         public BaseRepository(VibeCheckContext context)
         {

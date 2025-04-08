@@ -37,7 +37,7 @@ namespace VibeCheck.PL.Controllers
         }
 
         [HttpPost("AddUser")]
-        public async Task<IActionResult> AddUser(CreateUserDto user)
+        public async Task<IActionResult> AddUser([FromBody] CreateUserDto user)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace VibeCheck.PL.Controllers
 
         [Authorize]
         [HttpPut("UpdateUser/{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, UpdateUserDto User)
+        public async Task<IActionResult> UpdateUser(Guid id,[FromBody] UpdateUserDto User)
         {
             try
             {
