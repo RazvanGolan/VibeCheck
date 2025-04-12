@@ -15,11 +15,15 @@ function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement
         navigate('/login');
     };
 
+    const handleNavigateToHome = (): void => {
+        navigate('/');
+    };
+
     return (
         <header className="header">
             <div className="logo-small">
                 <span className="music-icon">♪</span>
-                <span className="title">VibeCheck</span>
+                <span className="title" onClick={handleNavigateToHome} style={{ cursor: 'pointer' }}>VibeCheck</span>
             </div>
 
             {!hideProfileSection && (
