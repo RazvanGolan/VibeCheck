@@ -138,11 +138,11 @@
 }
 
 .play-button.playing {
-  background-color: #dc2626;
+  background-color: #4c1d95; 
 }
 
 .play-button.playing:hover {
-  background-color: #ef4444;
+  background-color: #6d28d9; 
 }
 
 .play-icon {
@@ -150,7 +150,10 @@
 }
 
 .pause-icon {
-  font-size: 18px;
+  font-size: 16px;
+  display: flex;
+  position: relative;
+  top: 5%;
 }
 
 .select-song-button {

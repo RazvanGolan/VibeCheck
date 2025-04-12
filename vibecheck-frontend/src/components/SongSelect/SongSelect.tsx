@@ -88,7 +88,7 @@ const SongSelect = () => {
         }
         
         const data: Song[] = await response.json();
-        setSongs(data);
+        setSongs(data.slice(0, 24));
       } catch (error) {
         console.error('Error fetching songs:', error);
         setSongs([]);
