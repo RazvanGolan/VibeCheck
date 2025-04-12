@@ -8,4 +8,5 @@ public sealed class SongResponse
     public required string ArtistName { get; set; }
     public required string AlbumName { get; set; }
     public required string AlbumCoverSmall { get; set; }
+    public required string AlbumCoverBig { get; set; }
 }

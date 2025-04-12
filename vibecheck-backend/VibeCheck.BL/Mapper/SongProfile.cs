@@ -13,6 +13,7 @@ public class SongProfile : Profile
             .ForMember(dest => dest.PreviewUrl, opt => opt.MapFrom(src => src.preview))
             .ForMember(dest => dest.ArtistName, opt => opt.MapFrom(src => src.artist.name))
             .ForMember(dest => dest.AlbumName, opt => opt.MapFrom(src => src.album.title))
-            .ForMember(dest => dest.AlbumCoverSmall, opt => opt.MapFrom(src => src.album.cover_small));
+            .ForMember(dest => dest.AlbumCoverSmall, opt => opt.MapFrom(src => src.album.cover_small))
+            .ForMember(dest => dest.AlbumCoverBig, opt => opt.MapFrom(src => src.album.cover_big));
     }
 }

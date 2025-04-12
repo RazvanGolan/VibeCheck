@@ -3,6 +3,7 @@ import Layout from './components/Layout/Layout';
 import MainPage from './components/MainPage/MainPage';
 import Login from './components/LoginPage/Login';
 import CreateGame from './components/CreateGame/CreateGame';
+import SongSelect from './components/SongSelect/SongSelect';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 import ProtectedRoute from './context/ProtectedRoute';
@@ -27,6 +28,13 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <CreateGame />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/select" element={
+              <ProtectedRoute>
+                <Layout>
+                  <SongSelect />
                 </Layout>
               </ProtectedRoute>
             } />

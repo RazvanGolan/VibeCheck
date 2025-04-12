@@ -23,4 +23,5 @@ public class DeezerAlbum
 {
     public string title { get; set; }
     public string cover_small { get; set; }
+    public string cover_big { get; set; }
 }
