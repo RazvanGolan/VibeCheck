@@ -17,7 +17,7 @@ namespace VibeCheck.DAL.Entities
         public int Rounds { get; set; }
         public int PlayersLimit { get; set; }
         public int TimePerRound { get; set; }
-        public string Privacy { get; set; } = null!;
+        public PrivacyType Privacy { get; set; }
         public GameMode Mode { get; set; }
         public List<string> SelectedThemeCategories { get; set; } = new();
         public List<string> CustomThemes { get; set; } = new();

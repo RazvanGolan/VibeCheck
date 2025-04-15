@@ -47,7 +47,7 @@ namespace VibeCheck.PL.Controllers
             }
         }
 
-        [HttpPost("AddGame")]
+        [HttpPost("CreateGame")]
         public async Task<IActionResult> AddGame([FromBody] CreateGameDto game)
         {
             try

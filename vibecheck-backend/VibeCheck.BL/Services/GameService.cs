@@ -91,18 +91,26 @@ namespace VibeCheck.BL.Services
             var user = game.Participants.FirstOrDefault(u => u.UserId == userId)
                 ?? throw new InvalidOperationException("User not in game");
 
-            ValidateLeaveGame(game, user);
+            ValidateLeaveGame(game);
 
+            var wasHost = game.HostUserId == user.UserId; //true if the user is the host
             game.Participants.Remove(user);
 
-            // if no participants left we delete the game
-            if (game.Participants.Count == 0)
+            if(wasHost && game.Participants.Count > 0)
             {
-                await _gameRepository.DeleteByIdAsync(gameId);
-                return _mapper.Map<GameDto>(game);
+                // we transfer host to the first participant
+                game.HostUserId = game.Participants.First().UserId;
             }
 
-            await _gameRepository.UpdateAsync(game);
+            if(game.Participants.Count == 0)
+            {
+                await _gameRepository.DeleteByIdAsync(gameId);
+            }
+            else
+            {
+                await _gameRepository.UpdateAsync(game);
+            }
+
             return _mapper.Map<GameDto>(game);
         }
 
@@ -146,13 +154,10 @@ namespace VibeCheck.BL.Services
                 throw new InvalidOperationException("User already in game");
         }
 
-        private void ValidateLeaveGame(Game game, User user)
+        private void ValidateLeaveGame(Game game)
         {
             if (game.Status == GameStatus.Finished)
                 throw new InvalidOperationException("Cannot leave finished game");
-
-            if (game.HostUserId == user.UserId && game.Participants.Count > 1)
-                throw new InvalidOperationException("Host must transfer ownership before leaving");
         }
 
         #endregion

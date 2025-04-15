@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.DAL.Dtos.Games
@@ -19,8 +18,7 @@ namespace VibeCheck.DAL.Dtos.Games
         public int TimePerRound { get; set; }
 
         [Required]
-        [StringLength(10)]
-        public string Privacy { get; set; } = null!; // "Public" or "Private"
+        public PrivacyType Privacy { get; set; } // "Public" or "Private"
 
         [Required]
         public GameMode Mode { get; set; }

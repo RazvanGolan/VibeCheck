@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace VibeCheck.DAL.Enums
 {
-    public enum GameMode
+    public enum PrivacyType
     {
-        Classic,
-        Party,
-        Challenge
+        Public,
+        Private
     }
 }

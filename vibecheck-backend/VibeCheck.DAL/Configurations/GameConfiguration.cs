@@ -39,8 +39,7 @@ namespace VibeCheck.DAL.Configurations
 
             builder.Property(g => g.Privacy)
                 .IsRequired()
-                .HasMaxLength(10)
-                .HasConversion<string>();
+                .HasConversion<string>(); // storing the enum as string
 
             builder.Property(g => g.Mode)
                 .IsRequired()
