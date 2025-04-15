@@ -8,7 +8,8 @@
 
 
         // Navigation properties
-        public ICollection<Game> HostedGmaes { get; set; } = null!;
+        public ICollection<Game> HostedGames { get; set; } = null!;
+        public ICollection<Game> JoinedGames { get; set; } = null!;
         public ICollection<Song> SubmittedSongs { get; set; } = null!; // maybe baby
         public ICollection<Vote> Votes { get; set; } = null!; // maybe not 
     }
