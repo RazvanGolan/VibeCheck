@@ -14,7 +14,7 @@ namespace VibeCheck.BL.Interfaces
 
         Task<GameDto> DeleteGameAsync(Guid id);
 
-        Task<GameDto> JoinGameAsync(Guid gameId, Guid userId);
+        Task<GameDto> JoinGameAsync(string gameCode, Guid userId);
 
         Task<GameDto> LeaveGameAsync(Guid gameId, Guid userId);
     }
