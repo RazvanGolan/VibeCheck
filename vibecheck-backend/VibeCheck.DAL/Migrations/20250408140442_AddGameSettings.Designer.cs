@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VibeCheck.DAL;
@@ -11,9 +12,11 @@ using VibeCheck.DAL;
 namespace VibeCheck.DAL.Migrations
 {
     [DbContext(typeof(VibeCheckContext))]
-    partial class VibeCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250408140442_AddGameSettings")]
+    partial class AddGameSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,21 +24,6 @@ namespace VibeCheck.DAL.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("GameParticipants", b =>
-                {
-                    b.Property<Guid>("GameId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("GameId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("GameParticipants");
-                });
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Game", b =>
                 {
@@ -69,7 +57,8 @@ namespace VibeCheck.DAL.Migrations
 
                     b.Property<string>("Privacy")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<int>("Rounds")
                         .ValueGeneratedOnAdd()
@@ -261,21 +250,6 @@ namespace VibeCheck.DAL.Migrations
                         .IsUnique();
 
                     b.ToTable("Votes", (string)null);
-                });
-
-            modelBuilder.Entity("GameParticipants", b =>
-                {
-                    b.HasOne("VibeCheck.DAL.Entities.Game", null)
-                        .WithMany()
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("VibeCheck.DAL.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Game", b =>

@@ -9,10 +9,17 @@ using VibeCheck.DAL;
 using VibeCheck.DAL.Entities;
 using VibeCheck.DAL.Repositories;
 using VibeCheck.PL.Extensions;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// Add services to the container.
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); // convert enums to strings to see them in response
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithJwt();
@@ -24,6 +31,10 @@ builder.Services.AddServices();
 builder.Services.AddMappers();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
+
+builder.Services.AddTransient<IRepository<Game>, GameRepository>(); // register repository for Game entity
+builder.Services.AddTransient<IGameService, GameService>(); // register service for Game entity
+builder.Services.AddAutoMapper(typeof(GameProfile)); // register automapper
 
 var app = builder.Build();
 

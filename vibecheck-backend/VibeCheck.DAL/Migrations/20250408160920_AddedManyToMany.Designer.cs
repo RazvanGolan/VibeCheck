@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VibeCheck.DAL;
@@ -11,9 +12,11 @@ using VibeCheck.DAL;
 namespace VibeCheck.DAL.Migrations
 {
     [DbContext(typeof(VibeCheckContext))]
-    partial class VibeCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250408160920_AddedManyToMany")]
+    partial class AddedManyToMany
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,7 +72,8 @@ namespace VibeCheck.DAL.Migrations
 
                     b.Property<string>("Privacy")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<int>("Rounds")
                         .ValueGeneratedOnAdd()
