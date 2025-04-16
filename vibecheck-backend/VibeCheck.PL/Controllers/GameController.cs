@@ -109,12 +109,12 @@ namespace VibeCheck.PL.Controllers
             }
         }
 
-        [HttpPost("JoinGame/{gameId}/{userId}")]
-        public async Task<IActionResult> JoinGame(Guid gameId, Guid userId)
+        [HttpPost("JoinGame/{gameCode}/{userId}")]
+        public async Task<IActionResult> JoinGame(string gameCode, Guid userId)
         {
             try
             {
-                var result = await _gameService.JoinGameAsync(gameId, userId);
+                var result = await _gameService.JoinGameAsync(gameCode, userId);
                 return Ok(result);
             }
             catch (KeyNotFoundException ex)

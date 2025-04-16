@@ -49,6 +49,9 @@ public static class ServiceRegistrationExtensions
         services.AddTransient<IUserService, UserService>();
         services.AddTransient<IAuthService, AuthService>();
         services.AddTransient<ISongService, SongService>();
+        services.AddTransient<IGameRepository, GameRepository>(); // register repository for Game entity
+        services.AddTransient<IGameService, GameService>(); // register service for Game entity
+        services.AddAutoMapper(typeof(GameProfile)); // register automapper
         services.AddHttpClient();
         
         return services;

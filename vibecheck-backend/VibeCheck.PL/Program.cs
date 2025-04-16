@@ -32,10 +32,6 @@ builder.Services.AddMappers();
 
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
-builder.Services.AddTransient<IRepository<Game>, GameRepository>(); // register repository for Game entity
-builder.Services.AddTransient<IGameService, GameService>(); // register service for Game entity
-builder.Services.AddAutoMapper(typeof(GameProfile)); // register automapper
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
