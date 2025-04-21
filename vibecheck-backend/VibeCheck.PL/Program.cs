@@ -1,15 +1,6 @@
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using VibeCheck.BL.Interfaces;
-using VibeCheck.BL.Mapper;
-using VibeCheck.BL.Services;
-using VibeCheck.DAL;
-using VibeCheck.DAL.Entities;
-using VibeCheck.DAL.Repositories;
 using VibeCheck.PL.Extensions;
 using System.Text.Json.Serialization;
+using VibeCheck.PL.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,5 +40,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GameHub>("/gameHub");
 
 app.Run();

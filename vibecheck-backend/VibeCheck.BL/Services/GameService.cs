@@ -50,6 +50,14 @@ namespace VibeCheck.BL.Services
 
             return _mapper.Map<GameDto>(game);
         }
+        
+        public async Task<GameDto> GetGameByCodeAsync(string gameCode)
+        {
+            var game = await _gameRepository.GetByCodeAsync(gameCode)
+                ?? throw new KeyNotFoundException($"Game with code {gameCode} not found");
+
+            return _mapper.Map<GameDto>(game);
+        }
 
         public async Task<GameDto> UpdateGameAsync(Guid id, UpdateGameDto updateGameDto)
         {

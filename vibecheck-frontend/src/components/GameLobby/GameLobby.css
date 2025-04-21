@@ -1,0 +1,196 @@
+.lobby-container {
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.lobby-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.game-code-display {
+  background-color: #f8fafc;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 16px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.game-code-value {
+  font-weight: 700;
+  margin-left: 8px;
+  color: #0f172a;
+}
+
+.lobby-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.players-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.players-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.player-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  min-width: 150px;
+}
+
+.player-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+}
+
+.player-name {
+  font-weight: 600;
+  color: #334155;
+}
+
+.host-badge {
+  background-color: #0f172a;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
+
+.lobby-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.leave-button, .start-button {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.leave-button {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: none;
+}
+
+.leave-button:hover {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.start-button {
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  background-size: 300% 300%;
+  animation: gradientBG 8s ease infinite;
+  color: white;
+  border: none;
+}
+
+.start-button:hover {
+  filter: brightness(1.1);
+}
+
+.waiting-message {
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+  margin: 10px 0;
+}
+
+.game-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.setting-icon {
+  margin-right: 6px;
+  font-size: 16px;
+}
+
+.setting-value {
+  font-weight: 600;
+  color: #334155;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media screen and (max-width: 600px) {
+  .lobby-container {
+    padding: 20px;
+  }
+  
+  .lobby-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .lobby-actions {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .leave-button, .start-button {
+    width: 100%;
+  }
+}

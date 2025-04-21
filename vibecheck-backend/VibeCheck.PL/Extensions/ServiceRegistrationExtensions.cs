@@ -53,6 +53,7 @@ public static class ServiceRegistrationExtensions
         services.AddTransient<IGameService, GameService>(); // register service for Game entity
         services.AddAutoMapper(typeof(GameProfile)); // register automapper
         services.AddHttpClient();
+        services.AddSignalR();
         
         return services;
     }
