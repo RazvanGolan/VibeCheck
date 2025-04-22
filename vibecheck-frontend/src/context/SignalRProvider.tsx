@@ -9,11 +9,12 @@ interface SignalRContextType {
   error: string | null;
   joinGameGroup: (gameCode: string) => Promise<boolean>;
   leaveGameGroup: (gameCode: string) => Promise<boolean>;
-  connectToHub: () => Promise<void>;  // Added manual connection method
+  connectToHub: () => Promise<void>;
   onPlayerJoined: (callback: (participants: any[]) => void) => void;
   onPlayerLeft: (callback: (participants: any[]) => void) => void;
   onGameStateChanged: (callback: (gameStatus: string) => void) => void;
   onRoundStarted: (callback: (roundNumber: number, theme: string) => void) => void;
+  removeEventListener: (eventName: string) => void;
 }
 
 const SignalRContext = createContext<SignalRContextType>({
@@ -28,11 +29,14 @@ const SignalRContext = createContext<SignalRContextType>({
   onPlayerLeft: () => {},
   onGameStateChanged: () => {},
   onRoundStarted: () => {},
+  removeEventListener: () => {}
 });
 
 interface SignalRProviderProps {
   children: ReactNode;
 }
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const hubUrl = `${API_BASE_URL}/gameHub`;
 
 export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) => {
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
@@ -40,8 +44,6 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-  const hubUrl = `${API_BASE_URL}/gameHub`;
 
   const initializeConnection = useCallback(async () => {
     if (connecting || isConnected || !user) {
@@ -58,8 +60,13 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
           transport: signalR.HttpTransportType.WebSockets,
           withCredentials: false
         })
-        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Warning) // Only log warnings and errors
+        .withAutomaticReconnect([0, 2000, 5000, 10000, 15000, 30000])
         .build();
+      
+      newConnection.onreconnecting(() => {
+        setIsConnected(false);
+      });
       
       newConnection.onreconnected(() => {
         setIsConnected(true);
@@ -81,51 +88,19 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   }, [hubUrl, user, connecting, isConnected]);
 
+  const removeEventListener = useCallback((eventName: string) => {
+    if (connection) {
+      connection.off(eventName);
+    }
+  }, [connection]);
+
   useEffect(() => {
     let isMounted = true;
     
     const createConnection = async () => {
       if (connecting || isConnected || !user) return;
       
-      setConnecting(true);
-      setError(null);
-      
-      try {
-        const newConnection = new signalR.HubConnectionBuilder()
-          .withUrl(hubUrl, {
-            skipNegotiation: true,
-            transport: signalR.HttpTransportType.WebSockets,
-            withCredentials: false
-          })
-          .withAutomaticReconnect()
-          .build();
-        
-        newConnection.onreconnected(() => {
-          if (isMounted) {
-            setIsConnected(true);
-          }
-        });
-        
-        newConnection.onclose(() => {
-          if (isMounted) {
-            setIsConnected(false);
-          }
-        });
-        
-        await newConnection.start();
-        
-        if (isMounted) {
-          setConnection(newConnection);
-          setIsConnected(true);
-          setConnecting(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error("Error connecting to game hub:", err);
-          setError("Failed to connect to game server. Please try again later.");
-          setConnecting(false);
-        }
-      }
+      await initializeConnection();
     };
     
     if (user && !isConnected && !connecting) {
@@ -135,22 +110,17 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     return () => {
       isMounted = false;
       
-      if (connection) {
-        connection.stop().catch(err => {
-          console.error("Error stopping connection:", err);
-        });
-      }
+      // Do not disconnect on unmount - let the connection persist
+      // We'll clean it up only when the user logs out or the app closes
     };
-  }, [hubUrl, user, connecting, isConnected]);
+  }, [user, connecting, isConnected, initializeConnection]);
 
   const joinGameGroup = async (gameCode: string): Promise<boolean> => {
     if (!connection || !isConnected || !user) {
-      console.error("Cannot join game: not connected or no user");
       return false;
     }
     
     if (!gameCode) {
-      console.error("Game code is required to join a game group");
       return false;
     }
     
@@ -178,29 +148,45 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   };
 
-  const onPlayerJoined = (callback: (participants: any[]) => void) => {
+  const onPlayerJoined = useCallback((callback: (participants: any[]) => void) => {
     if (connection) {
-      connection.on("PlayerJoined", callback);
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("PlayerJoined");
+      connection.on("PlayerJoined", (participants) => {
+        callback(participants);
+      });
     }
-  };
+  }, [connection, removeEventListener]);
 
-  const onPlayerLeft = (callback: (participants: any[]) => void) => {
+  const onPlayerLeft = useCallback((callback: (participants: any[]) => void) => {
     if (connection) {
-      connection.on("PlayerLeft", callback);
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("PlayerLeft");
+      connection.on("PlayerLeft", (participants) => {
+        callback(participants);
+      });
     }
-  };
+  }, [connection, removeEventListener]);
 
-  const onGameStateChanged = (callback: (gameStatus: string) => void) => {
+  const onGameStateChanged = useCallback((callback: (gameStatus: string) => void) => {
     if (connection) {
-      connection.on("GameStateChanged", callback);
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("GameStateChanged");
+      connection.on("GameStateChanged", (gameStatus) => {
+        callback(gameStatus);
+      });
     }
-  };
+  }, [connection, removeEventListener]);
 
-  const onRoundStarted = (callback: (roundNumber: number, theme: string) => void) => {
+  const onRoundStarted = useCallback((callback: (roundNumber: number, theme: string) => void) => {
     if (connection) {
-      connection.on("RoundStarted", callback);
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("RoundStarted");
+      connection.on("RoundStarted", (roundNumber, theme) => {
+        callback(roundNumber, theme);
+      });
     }
-  };
+  }, [connection, removeEventListener]);
 
   const value = {
     connection,
@@ -214,6 +200,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     onPlayerLeft,
     onGameStateChanged,
     onRoundStarted,
+    removeEventListener
   };
 
   return (

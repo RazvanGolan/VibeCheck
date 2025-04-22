@@ -28,6 +28,7 @@ const GameLobby: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isHost, setIsHost] = useState(false);
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
+  const [initialSetupComplete, setInitialSetupComplete] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -50,85 +51,85 @@ const GameLobby: React.FC = () => {
       
       return gameData;
     } catch (err) {
-      console.error('Error fetching game details:', err);
       setError('Failed to load game data. Please try again.');
       return null;
     }
   }, [gameId, user, API_BASE_URL]);
 
-  useEffect(() => {
+  const setupSignalRHandlers = useCallback(() => {
+    if (!signalR.connection || !signalR.isConnected) {
+      return;
+    }
     
-    const setupSignalRHandlers = () => {
-      if (!signalR.connection || !signalR.isConnected) {
-        console.log('SignalR not connected yet, will try again when connected');
-        return;
+    // Clean up any existing handlers to prevent duplicates
+    signalR.removeEventListener("PlayerJoined");
+    signalR.removeEventListener("PlayerLeft");
+    signalR.removeEventListener("GameStateChanged");
+    
+    // Register new handlers
+    signalR.onPlayerJoined((updatedParticipants: User[]) => {
+      setGame(prevGame => {
+        if (!prevGame) return null;
+        return {
+          ...prevGame,
+          participants: updatedParticipants
+        };
+      });
+    });
+    
+    signalR.onPlayerLeft((updatedParticipants: User[]) => {
+      setGame(prevGame => {
+        if (!prevGame) return null;
+        return {
+          ...prevGame,
+          participants: updatedParticipants
+        };
+      });
+    });
+    
+    signalR.onGameStateChanged((gameStatus: string) => {
+      setGame(prevGame => {
+        if (!prevGame) return null;
+        return {
+          ...prevGame,
+          status: gameStatus
+        };
+      });
+      
+      if (gameStatus === 'Active') {
+        navigate(`/gameroom/${gameId}`);
       }
-            
-      signalR.onPlayerJoined((updatedParticipants: User[]) => {
-        setGame(prevGame => {
-          if (!prevGame) return null;
-          return {
-            ...prevGame,
-            participants: updatedParticipants
-          };
-        });
-      });
-      
-      signalR.onPlayerLeft((updatedParticipants: User[]) => {
-        setGame(prevGame => {
-          if (!prevGame) return null;
-          return {
-            ...prevGame,
-            participants: updatedParticipants
-          };
-        });
-      });
-      
-      signalR.onGameStateChanged((gameStatus: string) => {
-        setGame(prevGame => {
-          if (!prevGame) return null;
-          return {
-            ...prevGame,
-            status: gameStatus
-          };
-        });
-        
-        if (gameStatus === 'Active') {
-          navigate(`/gameroom/${gameId}`);
-        }
-      });
-    };
-
-    setupSignalRHandlers();
-  }, [signalR.isConnected]);
+    });
+  }, [signalR, gameId, navigate]);
 
   useEffect(() => {
     const initializeLobby = async () => {
-      if (!gameId || !user) return;
+      if (!gameId || !user || initialSetupComplete) return;
       
       try {
         setIsLoading(true);
         
-        // Fetch game details first
-        const gameData = await fetchGameDetails();
-        if (!gameData) return;
-        
-        // Manually initiate SignalR connection if not already connected
         if (!signalR.isConnected) {
           await signalR.connectToHub();
         }
         
-        // Only try to join if we're connected and haven't joined already
+        const gameData = await fetchGameDetails();
+        if (!gameData) {
+          return;
+        }
+                
+        setupSignalRHandlers();
+        
         if (signalR.isConnected && gameData.code && !hasJoinedGroup) {
           const joined = await signalR.joinGameGroup(gameData.code);
           if (joined) {
             setHasJoinedGroup(true);
+            setInitialSetupComplete(true);
           } else {
             setError("Failed to join game communications. Please try again.");
           }
         }
       } catch (err) {
-        console.error('Error initializing game lobby:', err);
         setError('Failed to set up game lobby. Please try again.');
       } finally {
         setIsLoading(false);
@@ -136,7 +137,22 @@ const GameLobby: React.FC = () => {
     };
 
     initializeLobby();
-  }, [gameId, user, fetchGameDetails, signalR, hasJoinedGroup]);
+  }, [
+    gameId, 
+    user, 
+    fetchGameDetails, 
+    signalR.isConnected,
+    hasJoinedGroup, 
+    setupSignalRHandlers, 
+    initialSetupComplete
+  ]);
+
+  // This effect runs when the SignalR connection is established to set up handlers
+  useEffect(() => {
+    if (signalR.isConnected) {
+      setupSignalRHandlers();
+    }
+  }, [signalR.isConnected, setupSignalRHandlers]);
 
   useEffect(() => {
     const joinGameGroupWhenConnected = async () => {
@@ -152,6 +168,20 @@ const GameLobby: React.FC = () => {
 
     joinGameGroupWhenConnected();
   }, [signalR.isConnected, game?.code, hasJoinedGroup, signalR]);
+
+  // Cleanup effect to leave the game group and remove event listeners when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (signalR.connection && hasJoinedGroup && game?.code) {
+        signalR.removeEventListener("PlayerJoined");
+        signalR.removeEventListener("PlayerLeft");
+        signalR.removeEventListener("GameStateChanged");
+        
+        signalR.leaveGameGroup(game.code).then(success => {
+        });
+      }
+    };
+  }, [signalR, hasJoinedGroup, game?.code]);
 
   const handleLeaveGame = async () => {
     if (!gameId || !user || !game) return;
@@ -172,7 +202,6 @@ const GameLobby: React.FC = () => {
       
       navigate('/');
     } catch (err) {
-      console.error('Error leaving game:', err);
       setError('Failed to leave game. Please try again.');
     }
   };
@@ -200,7 +229,6 @@ const GameLobby: React.FC = () => {
       
       navigate(`/gameroom/${gameId}`);
     } catch (err) {
-      console.error('Error starting game:', err);
       setError('Failed to start the game. Please try again.');
     }
   };
