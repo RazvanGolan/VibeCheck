@@ -81,6 +81,12 @@ const CreateRoom = () => {
       gameSettings.selectedThemeCategories = selectedThemeCategories;
     }
     console.log('Game created with settings:', gameSettings);
+
+    // TODO: Replace this with actual API call to create game and get room code
+    const newRoomCode = "NEW123"; // Placeholder
+
+    // Navigate to the lobby page with the new room code
+    navigate(`/lobby/${newRoomCode}`, { state: { username } }); // Pass username if needed
   };
 
   const handleBack = () => {
