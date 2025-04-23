@@ -117,7 +117,7 @@
   justify-content: center;
 }
 
-.play-button {
+.play-song-button {
   background-color: #0f172a;
   color: white;
   border: none;
@@ -132,16 +132,16 @@
   gap: 5px;
 }
 
-.play-button:hover {
+.play-song-button:hover {
   background-color: #1e293b;
   transform: translateY(-2px);
 }
 
-.play-button.playing {
+.play-song-button.playing {
   background-color: #4c1d95; 
 }
 
-.play-button.playing:hover {
+.play-song-button.playing:hover {
   background-color: #6d28d9; 
 }
 

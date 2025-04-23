@@ -171,7 +171,7 @@ const SongSelect = () => {
                 <p className="artist-name">{song.artistName}</p>
                 <div className="song-controls">
                   <button
-                    className={`play-button ${currentlyPlaying === song.id ? 'playing' : ''}`}
+                    className={`play-song-button ${currentlyPlaying === song.id ? 'playing' : ''}`}
                     onClick={() => handlePlayToggle(song)}
                   >
                     {currentlyPlaying === song.id ? (
