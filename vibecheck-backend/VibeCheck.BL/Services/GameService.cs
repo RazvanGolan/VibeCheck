@@ -114,6 +114,35 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(game);
         }
 
+        public async Task<GameDto> RemovePlayerFromGameAsync(Guid gameId, Guid hostUserId, Guid playerToRemoveId)
+        {
+            var game = await _gameRepository.GetByIdAsync(gameId)
+                ?? throw new KeyNotFoundException($"Game with id {gameId} not found");
+
+            // Validate host identity
+            if (game.HostUserId != hostUserId)
+                throw new UnauthorizedAccessException("Only the host can remove players from the game");
+
+            // Check if player is in the game
+            var playerToRemove = game.Participants.FirstOrDefault(p => p.UserId == playerToRemoveId)
+                ?? throw new InvalidOperationException("Player is not in this game");
+
+            // Check if trying to remove themselves (should use LeaveGame instead)
+            if (hostUserId == playerToRemoveId)
+                throw new InvalidOperationException("Host cannot remove themselves, use LeaveGame instead");
+
+            // Can't remove players from finished games
+            if (game.Status == GameStatus.Finished)
+                throw new InvalidOperationException("Cannot remove players from finished games");
+
+            // Remove the player
+            game.Participants.Remove(playerToRemove);
+            await _gameRepository.UpdateAsync(game);
+
+            return _mapper.Map<GameDto>(game);
+        }
+
+
         #region Private Methods
 
         private string GenerateUniqueCode()

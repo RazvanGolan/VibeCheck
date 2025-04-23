@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Games;
 
@@ -152,5 +154,36 @@ namespace VibeCheck.PL.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [Authorize]
+        [HttpPost("RemovePlayer/{gameId}/{playerToRemoveId}")]
+        public async Task<IActionResult> RemovePlayerFromGame(Guid gameId, Guid playerToRemoveId)
+        {
+            try
+            {
+                // Get the current user ID from the JWT token
+                var hostUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                var result = await _gameService.RemovePlayerFromGameAsync(gameId, hostUserId, playerToRemoveId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, ex.Message); // Forbidden
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
     }
 }
