@@ -3,13 +3,16 @@ import './MainPage.css';
 import { useAuth } from '../../context/AuthProvider';
 import { LiveGame } from '../../types/gameTypes';
 import { useNavigate} from 'react-router-dom';
+import { json } from 'stream/consumers';
 
 function MainPage() {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
     const [currentPage, setCurrentPage] = useState<number>(0);
     const [showJoinInput, setShowJoinInput] = useState<boolean>(false);
     const [gameCode, setGameCode] = useState<string>('');
     const navigate = useNavigate();
+
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
     // Mock games data - this would come from your SignalR hub
     const liveGames: LiveGame[] = [
@@ -66,13 +69,25 @@ function MainPage() {
         setCurrentPage((prev) => (prev - 1 + pageCount) % pageCount);
     };
 
-    const handleJoinGame = (): void => {
-        if (gameCode.trim()) {
-            console.log(`Joining game with code: ${gameCode}`);
-            // Here you would call your API to join the game
+    const handleJoinGame = async (): Promise<void> => {
+        if (gameCode.trim() && user) {
+            try {              
+              const joinResponse = await fetch(
+                `${API_BASE_URL}/api/Game/JoinGame/${gameCode}/${user.id}`,
+                { method: 'POST' }
+              );
+              
+              if (joinResponse.ok) {
+                const game = await joinResponse.json();
+                navigate(`/lobby/${game.gameId}`);
+              }
+            } catch (error) {
+              console.error('Error joining game:', error);
+            }
+            
             setGameCode('');
             setShowJoinInput(false);
-        }
+          }
     };
 
     const handleCreateGame = (): void => {

@@ -3,11 +3,12 @@ using VibeCheck.DAL.Entities;
 
 namespace VibeCheck.DAL.Repositories
 {
-    public class GameRepository : BaseRepository<Game>
+    public class GameRepository : BaseRepository<Game>, IGameRepository
     {
         public GameRepository(VibeCheckContext context) : base(context)
         {
         }
+        
         public override async Task<Game?> GetByIdAsync(Guid id)
         {
             return await _context.Games
@@ -20,6 +21,13 @@ namespace VibeCheck.DAL.Repositories
             return await _context.Games
                 .Include(g => g.Participants)
                 .ToListAsync();
+        }
+        
+        public async Task<Game?> GetByCodeAsync(string code)
+        {
+            return await _context.Games
+                .Include(g => g.Participants)
+                .FirstOrDefaultAsync(g => g.Code == code);
         }
     }
 }

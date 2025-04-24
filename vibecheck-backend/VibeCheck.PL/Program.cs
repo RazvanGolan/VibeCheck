@@ -1,15 +1,6 @@
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using VibeCheck.BL.Interfaces;
-using VibeCheck.BL.Mapper;
-using VibeCheck.BL.Services;
-using VibeCheck.DAL;
-using VibeCheck.DAL.Entities;
-using VibeCheck.DAL.Repositories;
 using VibeCheck.PL.Extensions;
 using System.Text.Json.Serialization;
+using VibeCheck.PL.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,56 +15,13 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerWithJwt();
 
-var connectionString = builder.Configuration.GetConnectionString("VibeCheckContext");
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
+builder.Services.AddCorsConfiguration();
+builder.Services.AddRepositories();
+builder.Services.AddServices();
+builder.Services.AddMappers();
 
-builder.Services.AddDbContext<VibeCheckContext>(options => 
-    options.UseNpgsql(connectionString)
-);
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAnyOrigin", builder =>
-    {
-        builder.AllowAnyOrigin();
-        builder.AllowAnyMethod();
-        builder.AllowAnyHeader();
-    });
-});
-
-builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>(); // register repository for User entity
-builder.Services.AddTransient<IUserService, UserService>(); // register service for User entity
-builder.Services.AddAutoMapper(typeof(UserProfile)); // register automapper
-builder.Services.AddTransient<IAuthService, AuthService>();
-
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"] ?? "default_secret_key");
-var issuer = jwtSettings["Issuer"] ?? "default_issuer";
-
-builder.Services.AddAuthorization();
-builder.Services.AddAuthentication(x =>
-    {
-        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(x =>
-    {
-        x.RequireHttpsMetadata = false;
-        x.SaveToken = true;
-        x.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key),
-            ValidateIssuer = false,
-            ValidIssuer = issuer,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
-        };
-    });
-
-builder.Services.AddTransient<IRepository<Game>, GameRepository>(); // register repository for Game entity
-builder.Services.AddTransient<IGameService, GameService>(); // register service for Game entity
-builder.Services.AddAutoMapper(typeof(GameProfile)); // register automapper
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -92,5 +40,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GameHub>("/gameHub");
 
 app.Run();

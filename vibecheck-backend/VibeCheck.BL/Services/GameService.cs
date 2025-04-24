@@ -10,12 +10,12 @@ namespace VibeCheck.BL.Services
 {
     public class GameService : IGameService
     {
-        private readonly IRepository<Game> _gameRepository;
+        private readonly IGameRepository _gameRepository;
         private readonly IRepository<User> _userRepository;
         private readonly IMapper _mapper;
         private readonly Random _random = new();
 
-        public GameService(IRepository<Game> gameRepository, IRepository<User> userRepository, IMapper mapper)
+        public GameService(IGameRepository gameRepository, IRepository<User> userRepository, IMapper mapper)
         {
             _gameRepository = gameRepository;
             _userRepository = userRepository;
@@ -50,6 +50,14 @@ namespace VibeCheck.BL.Services
 
             return _mapper.Map<GameDto>(game);
         }
+        
+        public async Task<GameDto> GetGameByCodeAsync(string gameCode)
+        {
+            var game = await _gameRepository.GetByCodeAsync(gameCode)
+                ?? throw new KeyNotFoundException($"Game with code {gameCode} not found");
+
+            return _mapper.Map<GameDto>(game);
+        }
 
         public async Task<GameDto> UpdateGameAsync(Guid id, UpdateGameDto updateGameDto)
         {
@@ -70,10 +78,10 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(game);
         }
 
-        public async Task<GameDto> JoinGameAsync(Guid gameId, Guid userId)
+        public async Task<GameDto> JoinGameAsync(string gameCode, Guid userId)
         {
-            var game = await _gameRepository.GetByIdAsync(gameId)
-                ?? throw new KeyNotFoundException($"Game with id {gameId} not found");
+            var game = await _gameRepository.GetByCodeAsync(gameCode)
+                ?? throw new KeyNotFoundException($"Game with id {gameCode} not found");
             var user = await _userRepository.GetByIdAsync(userId)
                 ?? throw new InvalidOperationException("User not found");
 

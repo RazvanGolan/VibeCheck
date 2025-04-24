@@ -10,6 +10,8 @@ COPY ["VibeCheck.PL/VibeCheck.PL.csproj", "VibeCheck.PL/"]
 COPY ["VibeCheck.BL/VibeCheck.BL.csproj", "VibeCheck.BL/"]
 COPY ["VibeCheck.DAL/VibeCheck.DAL.csproj", "VibeCheck.DAL/"]
 RUN dotnet restore "VibeCheck.PL/VibeCheck.PL.csproj"
+RUN dotnet tool install --global dotnet-ef
+ENV PATH="$PATH:/root/.dotnet/tools"
 COPY . .
 WORKDIR "/src/VibeCheck.PL"
 RUN dotnet build "VibeCheck.PL.csproj" -c $BUILD_CONFIGURATION -o /app/build
