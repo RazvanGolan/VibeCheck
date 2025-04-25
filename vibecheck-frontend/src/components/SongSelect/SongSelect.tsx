@@ -9,7 +9,7 @@ const defaultSongs: Song[] = [
   {
     id: "781592622",
     title: "Never Gonna Give You Up",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3?hdnea=exp=1744463486~acl=/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3*~data=user_id=0,application_id=42~hmac=a72f371c913c8c283fefecf2df7817f31af0095cd69c22b9d12d143fc9df2c7b",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3?hdnea=exp=1745588479~acl=/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3*~data=user_id=0,application_id=42~hmac=c679d23427f630d2a73d67a4648143ee00ecd9835a4d585c1b86b3fbb1813189",
     artistName: "Rick Astley",
     albumName: "The Best of Me",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/fe779e632872f7c6e9f1c84ffa7afc33/56x56-000000-80-0-0.jpg",
@@ -18,7 +18,7 @@ const defaultSongs: Song[] = [
   {
     id: "2404839565",
     title: "Ciocolata",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3?hdnea=exp=1744463502~acl=/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3*~data=user_id=0,application_id=42~hmac=68b5d7a7c9a680b19692efe29059bbfe3795dc7b8c319e1c0cc90c0460808444",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3?hdnea=exp=1745588577~acl=/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3*~data=user_id=0,application_id=42~hmac=ff07d890c8f459470918b620093bf3ad71e5d5ffb724c1fe01df259e3d46fc00",
     artistName: "Tzanca Uraganu",
     albumName: "Ciocolata",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/d4db5f5d0652e2b9bfc93e89c9e5b564/56x56-000000-80-0-0.jpg",
@@ -27,7 +27,7 @@ const defaultSongs: Song[] = [
   {
     id: "10199904",
     title: "Animal I Have Become",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3?hdnea=exp=1744463537~acl=/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3*~data=user_id=0,application_id=42~hmac=3db73e9968519857c15e7a4571db1cd18e63c135beb45ed6da16e179fc96e157",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3?hdnea=exp=1745588618~acl=/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3*~data=user_id=0,application_id=42~hmac=7d12b94347e94de574c4ca405f8a9b2510b89588af141931b269fc10e6b88460",
     artistName: "Three Days Grace",
     albumName: "One-X",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/c7f57c5507ba7753412f52371b475806/56x56-000000-80-0-0.jpg",

@@ -1,0 +1,291 @@
+.voting-page-container {
+  padding: 40px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.voting-header {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.voting-title {
+  font-size: 38px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 10px;
+}
+
+.voting-instructions {
+  font-size: 16px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.voted-message {
+  color: #8b5cf6;
+  font-weight: 600;
+}
+
+.vote-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.vote-card {
+  display: flex;
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.vote-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(15, 23, 42, 0.12);
+}
+
+.vote-card.user-voted {
+  border: 2px solid #8b5cf6;
+}
+
+.vote-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+  background: linear-gradient(135deg, #0f172a, #334155);
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+  padding: 15px;
+}
+
+.vote-content {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+}
+
+.song-details {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.song-cover {
+  width: 160px;
+  height: 160px;
+  border-radius: 6px;
+  object-fit: cover;
+  margin-right: 20px;
+}
+
+.song-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.song-title {
+  font-size: clamp(16px, 3vw, 22px);
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.song-artist {
+  font-size: clamp(14px, 2.5vw, 16px);
+  color: #64748b;
+  margin: 0 0 15px 0;
+}
+
+.submitter-info {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  justify-content: center;
+}
+
+.submitter-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.submitter-name {
+  font-size: clamp(12px, 2vw, 16px);
+  color: #64748b;
+}
+
+.vote-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 160px;
+}
+
+.song-preview-button {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border: none;
+  border-radius: 30px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+}
+
+.song-preview-button:hover {
+  background-color: #e2e8f0;
+}
+
+.song-preview-button.playing {
+  background-color: #4c1d95;
+  color: white;
+}
+
+.song-preview-button.playing:hover {
+  background-color: #6d28d9;
+}
+
+.play-icon, .pause-icon {
+  font-size: 12px;
+}
+
+.vote-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.votes {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vote-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.vote-button {
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.vote-button:hover {
+  filter: brightness(1.2);
+}
+
+.vote-button.voted {
+  background: #8b5cf6;
+}
+
+.vote-button.disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.voting-results {
+  margin-top: 40px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  border: 2px solid #8b5cf6;
+}
+
+.results-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 15px;
+}
+
+.winner-announcement {
+  font-size: 18px;
+  color: #334155;
+}
+
+@media screen and (max-width: 768px) {
+  .voting-page-container {
+    padding: 20px;
+  }
+  
+  .round-info {
+    flex-direction: column;
+    gap: 10px;
+    padding: 15px;
+  }
+  
+  .theme {
+    position: static;
+    transform: none;
+    margin: 5px 0;
+  }
+  
+  .vote-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .vote-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .song-preview-button, .vote-button {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .vote-card {
+    flex-direction: column;
+  }
+  
+  .vote-rank {
+    width: 100%;
+    padding: 5px;
+  }
+  
+  .song-cover {
+    width: 80px;
+    height: 80px;
+    margin-right: 10px;
+  }
+  
+  .vote-actions {
+    margin-top: 10px;
+  }
+
+  .vote-content {
+    padding: 10px 15px;
+  }
+}
