@@ -173,7 +173,7 @@ namespace VibeCheck.PL.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return StatusCode(403, ex.Message); // Forbidden
+                return Unauthorized(ex.Message);
             }
             catch (InvalidOperationException ex)
             {
@@ -181,7 +181,7 @@ namespace VibeCheck.PL.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"An error occurred: {ex.Message}");
+                return BadRequest(ex.Message);
             }
         }
 
