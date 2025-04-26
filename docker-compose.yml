@@ -23,5 +23,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  migrate:
+    build:
+      context: ./vibecheck-backend
+      dockerfile: VibeCheck.PL/Dockerfile
+    command: >
+      sh -c "sleep 50 && dotnet ef database update --project VibeCheck.PL --startup-project VibeCheck.PL"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__VibeCheckContext=Host=postgres;Database=VibeCheck;Username=postgres;Password=150903
+    depends_on:
+      - postgres
+
 volumes:
   pgdata:
