@@ -29,5 +29,20 @@ namespace VibeCheck.DAL.Repositories
                 .Include(g => g.Participants)
                 .FirstOrDefaultAsync(g => g.Code == code);
         }
+
+        public async Task<Game?> GetByIdWithDetailsAsync(Guid id)
+        {
+            return await _context.Set<Game>()
+                .Include(g => g.Participants)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Theme)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.User)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.Votes)
+                .FirstOrDefaultAsync(g => g.GameId == id);
+        } 
     }
 }

@@ -1,5 +1,7 @@
 ﻿
 
+using VibeCheck.DAL.Enums;
+
 namespace VibeCheck.DAL.Entities
 {
     public class Round
@@ -8,7 +10,7 @@ namespace VibeCheck.DAL.Entities
         public Guid GameId { get; set; }
         public Guid ThemeId { get; set; }
         public int RoundNumber { get; set; }  
-        public int Status { get; set; } // de facut enum dif de game or 0=Submitting, 1=Voting, 2=Completed)
+        public RoundStatus Status { get; set; } 
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
 

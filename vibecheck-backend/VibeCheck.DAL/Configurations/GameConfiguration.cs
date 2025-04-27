@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Text.Json;
 using VibeCheck.DAL.Entities;
 
 namespace VibeCheck.DAL.Configurations
@@ -21,20 +23,20 @@ namespace VibeCheck.DAL.Configurations
                 .IsRequired();
 
             builder.Property(g => g.Status)
-                .IsRequired()
-                .HasConversion<string>();  // Store enum as string
+                .HasConversion<string>()  // Store enum as string
+                .IsRequired();
 
             // New properties
-            builder.Property(g => g.Rounds)
-                .IsRequired()
+            builder.Property(g => g.TotalRounds)
                 .HasDefaultValue(5);
 
+            builder.Property(g => g.CurrentRound)
+                .HasDefaultValue(1);
+
             builder.Property(g => g.PlayersLimit)
-                .IsRequired()
                 .HasDefaultValue(8);
 
             builder.Property(g => g.TimePerRound)
-                .IsRequired()
                 .HasDefaultValue(60);
 
             builder.Property(g => g.Privacy)
@@ -45,20 +47,37 @@ namespace VibeCheck.DAL.Configurations
                 .IsRequired()
                 .HasConversion<string>();
 
+            var listComparer = new ValueComparer<List<string>>(
+                (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+                c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())) : 0,
+                c => c != null ? new List<string>(c) : new List<string>()
+            );
+
             builder.Property(g => g.SelectedThemeCategories)
                 .HasConversion(
                     v => string.Join(',', v),
-                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList());
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(listComparer);
 
             builder.Property(g => g.CustomThemes)
                 .HasConversion(
                     v => string.Join(',', v),
-                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList());
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                .Metadata.SetValueComparer(listComparer);
 
+            // Configure relationships
             builder.HasOne(g => g.HostUser)
-                .WithMany(u => u.HostedGames) 
+                .WithMany(u => u.HostedGames)
                 .HasForeignKey(g => g.HostUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(g => g.RoundsList)
+                .WithOne(r => r.Game)
+                .HasForeignKey(r => r.GameId);
+
+            builder.HasMany(g => g.Leaderboard)
+                .WithOne(ps => ps.Game)
+                .HasForeignKey(ps => ps.GameId);
 
             builder.HasMany(g => g.Participants)
                    .WithMany(u => u.JoinedGames)

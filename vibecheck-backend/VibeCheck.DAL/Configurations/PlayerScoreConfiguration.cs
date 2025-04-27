@@ -8,13 +8,17 @@ namespace VibeCheck.DAL.Configurations
     {
         public void Configure(EntityTypeBuilder<PlayerScore> builder)
         {
-            builder.HasKey(ps => new { ps.GameId, ps.UserId });
+            builder.HasKey(ps => ps.PlayerScoreId);
 
+            builder.Property(ps => ps.TotalScore)
+                .IsRequired();
+                
+            // Relationships
             builder.HasOne(ps => ps.Game)
                 .WithMany(g => g.Leaderboard)
                 .HasForeignKey(ps => ps.GameId);
-
-            builder.HasOne(ps => ps.Player) // a user can have multiple scores in different games
+                
+            builder.HasOne(ps => ps.Player)
                 .WithMany()
                 .HasForeignKey(ps => ps.UserId);
         }

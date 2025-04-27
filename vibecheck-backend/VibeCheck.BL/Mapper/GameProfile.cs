@@ -1,5 +1,9 @@
 ﻿using AutoMapper;
 using VibeCheck.DAL.Dtos.Games;
+using VibeCheck.DAL.Dtos.Leaderboard;
+using VibeCheck.DAL.Dtos.Rounds;
+using VibeCheck.DAL.Dtos.Songs;
+using VibeCheck.DAL.Dtos.Themes;
 using VibeCheck.DAL.Entities;
 using VibeCheck.DAL.Enums;
 
@@ -9,23 +13,35 @@ namespace VibeCheck.BL.Mapper
     {
         public GameProfile()
         {
-            CreateMap<CreateGameDto, Game>();
-
             CreateMap<Game, GameDto>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ReverseMap();
+            .ForMember(dest => dest.TotalRounds, opt => opt.MapFrom(src => src.TotalRounds))
+            .ForMember(dest => dest.Rounds, opt => opt.MapFrom(src =>
+                src.RoundsList.OrderBy(r => r.RoundNumber)));
 
-            CreateMap<UpdateGameDto, Game>()
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.Rounds, opt => opt.MapFrom(src => src.Rounds))
-                .ForMember(dest => dest.PlayersLimit, opt => opt.MapFrom(src => src.PlayersLimit))
-                .ForMember(dest => dest.TimePerRound, opt => opt.MapFrom(src => src.TimePerRound))
-                .ForMember(dest => dest.Privacy, opt => opt.MapFrom(src => src.Privacy))
-                .ForMember(dest => dest.Mode, opt => opt.MapFrom(src => src.Mode))
-                .ForMember(dest => dest.SelectedThemeCategories, opt => opt.MapFrom(src => src.SelectedThemeCategories))
-                .ForMember(dest => dest.CustomThemes, opt => opt.MapFrom(src => src.CustomThemes));
+            CreateMap<UpdateGameDto, Game>();
 
-            // or can write direcly CreateMap<UpdateGameDto, Game>(); because the names are the same
+            // Round mappings  
+            CreateMap<Round, RoundDto>();
+
+            // Theme mappings
+            CreateMap<Theme, ThemeDto>();
+
+            // Song mappings
+            CreateMap<Song, SongDto>()
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.SongTitle))
+                .ForMember(dest => dest.UserName, opt => opt.Ignore())
+                .ForMember(dest => dest.VoteCount, opt => opt.Ignore());
+
+            // Add CreateGame to Game mapping
+            CreateMap<CreateGameDto, Game>()
+                .ForMember(dest => dest.GameId, opt => opt.Ignore())
+                .ForMember(dest => dest.CurrentRound, opt => opt.MapFrom(_ => 1))
+                .ForMember(dest => dest.TotalRounds, opt => opt.MapFrom(src => src.Rounds));
+
+            // PlayerScore mappings
+            CreateMap<PlayerScore, PlayerScoreDto>()
+                .ForMember(dest => dest.Username, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.TotalScore));
         }
     }
 }

@@ -7,10 +7,16 @@ namespace VibeCheck.DAL.Entities
         public Guid SongId { get; set; }
         public Guid RoundId { get; set; } 
         public Guid UserId { get; set; } 
-        public string SongTitle { get; set; } = null!;  
-        public string Artist { get; set; } = null!;
-        public string SpotifyUri { get; set; } = null!;
+        public string SongTitle { get; set; } = string.Empty;
+        public string Artist { get; set; } = string.Empty; 
+        public string SpotifyUri { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
+
+        // New properties from frontend
+        public string? AlbumName { get; set; }
+        public string? AlbumCoverSmall { get; set; }
+        public string? AlbumCoverBig { get; set; }
+        public string? PreviewUrl { get; set; }
 
         // Navigation properties
         public Round Round { get; set; } = null!;
