@@ -9,12 +9,26 @@ type GameDetails = {
   gameId: string;
   code: string;
   hostUserId: string;
-  rounds: number;
+  currentRound: number;
+  totalRounds: number;
   timePerRound: number;
   playersLimit: number;
   gameMode: string;
   status: string;
   participants: User[];
+  // Define the currentRound property that might be causing the issue
+  rounds?: {
+    roundId: string;
+    roundNumber: number;
+    status: number;
+    startTime: string;
+    endTime: string;
+    theme: {
+      id: string;
+      name: string;
+    };
+    songs: any[];
+  };
 };
 
 const GameLobby: React.FC = () => {
@@ -258,7 +272,7 @@ const GameLobby: React.FC = () => {
           </div>
           <div className="setting-item">
             <span className="setting-icon">🔄</span>
-            <span className="setting-value">{game.rounds} rounds</span>
+            <span className="setting-value">{game.totalRounds} rounds</span>
           </div>
           <div className="setting-item">
             <span className="setting-icon">⏱️</span>
