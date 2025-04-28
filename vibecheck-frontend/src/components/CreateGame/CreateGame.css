@@ -320,10 +320,27 @@
   .input-feedback {
     font-size: 0.85rem;
     margin-top: 8px; 
-    min-height: 1.2em; /* Reserve space to prevent layout jumps */
+    min-height: 1.2em;
   }
   
   .input-feedback.error {
-    color: #dc2626; /* Red color for errors */
+    color: #dc2626; 
+  }
+  
+  /* Add styles for loading and error states */
+  .error-message {
+    color: #dc2626; 
+    background-color: #fef2f2; 
+    border: 1px solid #fecaca; 
+    padding: 10px 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 14px;
+  }
+  
+  .create-game-button[disabled] {
+    background-color: #9ca3af; 
+    cursor: not-allowed;
   }
   
