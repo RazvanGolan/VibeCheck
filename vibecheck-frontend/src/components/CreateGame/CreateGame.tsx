@@ -122,6 +122,16 @@ const CreateRoom = () => {
     } finally {
       setIsLoading(false);
     }
+<<<<<<< HEAD
+=======
+    console.log('Game created with settings:', gameSettings);
+
+    // TODO: Replace this with actual API call to create game and get room code
+    const newRoomCode = "NEW123"; // Placeholder
+
+    // Navigate to the lobby page with the new room code
+    navigate(`/lobby/${newRoomCode}`, { state: { username } }); // Pass username if needed
+>>>>>>> 8039af23a3e34a75aae5bff3773d5d4d9b95855b
   };
 
   const handleBack = () => {

@@ -3,7 +3,11 @@ import Layout from './components/Layout/Layout';
 import MainPage from './components/MainPage/MainPage';
 import Login from './components/LoginPage/Login';
 import CreateGame from './components/CreateGame/CreateGame';
+<<<<<<< HEAD
 import SongSelect from './components/SongSelect/SongSelect';
+=======
+import GameLobby from './components/GameLobby/GameLobby';
+>>>>>>> 8039af23a3e34a75aae5bff3773d5d4d9b95855b
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 import { SignalRProvider } from './context/SignalRProvider';
@@ -29,9 +33,12 @@ function App() {
             } />
              <Route path="/creategame" element={
               <ProtectedRoute>
-                <Layout>
-                  <CreateGame />
-                </Layout>
+                <CreateGame />
+              </ProtectedRoute>
+            } />
+            <Route path="/lobby/:roomCode" element={
+              <ProtectedRoute>
+                <GameLobby />
               </ProtectedRoute>
             } />
             <Route path="/lobby/:gameId" element={
