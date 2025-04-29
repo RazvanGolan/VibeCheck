@@ -191,8 +191,9 @@
 
 .leave-game-button {
   background-color: transparent;
-  color: #64748b;
+  color: #475569;
   margin-top: 0px;
+  border: 1px solid #e2e8f0;
 }
 
 .leave-game-button:hover {
@@ -246,29 +247,6 @@
   font-size: 18px;
   color: #334155;
 }
-
-.lobby-header,
-.game-code-display,
-.game-code-value,
-.lobby-content,
-.players-section,
-.section-title,
-.players-list,
-.player-card,
-.player-avatar,
-.player-name,
-.host-badge,
-.lobby-actions,
-.leave-button, 
-.start-button,
-.waiting-message,
-.game-settings,
-.setting-item,
-.setting-icon {
-
- display: none; 
-} 
-
 
 .info-value-container.clickable {
   display: inline-flex; 

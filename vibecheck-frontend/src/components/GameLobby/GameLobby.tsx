@@ -308,7 +308,7 @@ const GameLobby: React.FC = () => {
             onClick={handleStartGame}
             disabled={game.participants.length < 1}
           >
-
+            Start Game
           </button>
         )}
         

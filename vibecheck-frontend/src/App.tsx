@@ -32,11 +32,6 @@ function App() {
                 <CreateGame />
               </ProtectedRoute>
             } />
-            <Route path="/lobby/:roomCode" element={
-              <ProtectedRoute>
-                <GameLobby />
-              </ProtectedRoute>
-            } />
             <Route path="/lobby/:gameId" element={
               <ProtectedRoute>
                 <Layout>
