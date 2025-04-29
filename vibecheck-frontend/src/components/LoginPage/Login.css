@@ -120,22 +120,6 @@ input:focus {
   font-weight: 500;
 }
 
-.error-message {
-  color: #dc2626;
-  background-color: #fef2f2; 
-  border: 1px solid #fecaca; 
-  padding: 10px 15px; 
-  border-radius: 6px; 
-  margin-bottom: 15px;
-  margin-top: 5px; 
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-  max-width: 300px; 
-  width: 100%; 
-  box-sizing: border-box; 
-}
-
 @media screen and (max-width: 480px) {
   .login-content {
     padding: 15px;

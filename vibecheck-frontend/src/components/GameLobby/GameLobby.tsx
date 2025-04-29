@@ -317,9 +317,6 @@ const GameLobby: React.FC = () => {
           </button>
 
       </div>
-      <footer className="lobby-footer">
-        © 2025 VibeCheck. All rights reserved.
-      </footer>
     </div>
   );
 };

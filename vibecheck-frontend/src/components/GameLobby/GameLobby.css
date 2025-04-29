@@ -239,7 +239,7 @@
   }
 }
 
-.loading, .error-message {
+.loading {
   display: flex;
   justify-content: center;
   align-items: center;
