@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './CreateGame.css';
-import { GameMode, GameSettings, defaultGameSettings } from '../../types/gameSettings';
+import { GameMode, GameSettings, defaultGameSettings, PrivacyType } from '../../types/gameSettings';
+import { useAuth } from '../../context/AuthProvider';
 
 interface LocationState {
   username?: string;
@@ -10,19 +11,23 @@ interface LocationState {
 const CreateRoom = () => {
   const location = useLocation();
   const state = location.state as LocationState;
-  const username = state?.username || '';
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [gameMode, setGameMode] = useState<GameMode>(defaultGameSettings.gameMode);
   const [rounds, setRounds] = useState<number>(defaultGameSettings.rounds);
   const [timePerRound, setTimePerRound] = useState<number>(defaultGameSettings.timePerRound);
   const [playersLimit, setPlayersLimit] = useState<number>(defaultGameSettings.playersLimit);
-  const [privacy, setPrivacy] = useState<string>(defaultGameSettings.privacy);
+  const [privacy, setPrivacy] = useState<PrivacyType>(defaultGameSettings.privacy);
   const [selectedThemeCategories, setSelectedThemeCategories] = useState<string[]>(defaultGameSettings.selectedThemeCategories);
   const [customThemes, setCustomThemes] = useState<string[]>(defaultGameSettings.customThemes);
   
   const [customThemeInput, setCustomThemeInput] = useState('');
   const [themeFeedback, setThemeFeedback] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
   const themeCategories = [
     'Road Trip', 'Party', 'Workout', 
@@ -67,20 +72,56 @@ const CreateRoom = () => {
     setCustomThemes(customThemes.filter(t => t !== theme));
   };
 
-  const handleCreateGame = (e: React.FormEvent) => {
+  const handleCreateGame = async (e: React.FormEvent) => {
     e.preventDefault();
-    const gameSettings: Partial<GameSettings> & { customThemeInput?: string } = {
-      gameMode,
-      rounds,
-      timePerRound,
-      playersLimit,
-      privacy,
-      customThemes,
-    };
-    if (gameMode !== GameMode.Classic) {
-      gameSettings.selectedThemeCategories = selectedThemeCategories;
+    setError(null);
+
+    if (!user) {
+      setError("You must be logged in to create a game.");
+      return;
     }
-    console.log('Game created with settings:', gameSettings);
+
+    setIsLoading(true);
+
+    const payload = {
+      hostUserId: user.id,
+      rounds,
+      playersLimit,
+      timePerRound,
+      privacy,
+      mode: gameMode,
+      selectedThemeCategories: gameMode === GameMode.Classic ? [] : selectedThemeCategories,
+      customThemes
+    };
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Game/CreateGame`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text(); 
+        throw new Error(errorData || 'Failed to create game');
+      }
+
+      const newGame = await response.json();
+      
+      if (newGame && newGame.gameId) {
+        navigate(`/lobby/${newGame.gameId}`);
+      } else {
+        throw new Error('Game created, but no game ID received.');
+      }
+
+    } catch (err: any) {
+      console.error('Error creating game:', err);
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBack = () => {
@@ -103,9 +144,9 @@ const CreateRoom = () => {
   return (
     <div className="create-room-container">
       <div className="create-room-card">
-
         <div className="create-room-content">
           <h1>Create New Game</h1>
+          {error && <p className="error-message">Error: {error}</p>}
 
           <form onSubmit={handleCreateGame} className="create-room-form">
             <div className="form-row">
@@ -115,6 +156,7 @@ const CreateRoom = () => {
                   id="gameMode" 
                   value={gameMode}
                   onChange={(e) => setGameMode(e.target.value as GameMode)}
+                  disabled={isLoading}
                 >
                   <option value={GameMode.Classic}>{GameMode.Classic}</option>
                   <option value={GameMode.Party}>{GameMode.Party}</option>
@@ -134,6 +176,7 @@ const CreateRoom = () => {
                   min="1"
                   max="20"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -148,6 +191,7 @@ const CreateRoom = () => {
                   step="15"
                   max="180"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -163,6 +207,7 @@ const CreateRoom = () => {
                   min="2"
                   max="16"
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -171,10 +216,11 @@ const CreateRoom = () => {
                 <select 
                   id="privacy" 
                   value={privacy}
-                  onChange={(e) => setPrivacy(e.target.value)}
+                  onChange={(e) => setPrivacy(e.target.value as PrivacyType)}
+                  disabled={isLoading}
                 >
-                  <option>Public</option>
-                  <option>Private</option>
+                  <option value={PrivacyType.Public}>{PrivacyType.Public}</option>
+                  <option value={PrivacyType.Private}>{PrivacyType.Private}</option>
                 </select>
               </div>
             </div>
@@ -190,6 +236,7 @@ const CreateRoom = () => {
                         id={theme}
                         checked={selectedThemeCategories.includes(theme)}
                         onChange={() => handleThemeToggle(theme)}
+                        disabled={isLoading}
                       />
                       <label htmlFor={theme}>{theme}</label>
                     </div>
@@ -206,11 +253,13 @@ const CreateRoom = () => {
                   placeholder="Add custom theme..."
                   value={customThemeInput}
                   onChange={(e) => setCustomThemeInput(e.target.value)}
+                  disabled={isLoading}
                 />
                 <button 
                   type="button" 
                   className="add-button"
                   onClick={handleAddCustomTheme}
+                  disabled={isLoading}
                 >
                   Add
                 </button>
@@ -224,6 +273,7 @@ const CreateRoom = () => {
                       type="button" 
                       className="remove-button"
                       onClick={() => handleRemoveCustomTheme(theme)}
+                      disabled={isLoading}
                     >
                       ×
                     </button>
@@ -233,11 +283,11 @@ const CreateRoom = () => {
             </div>
 
             <div className="form-actions">
-              <button type="button" className="back-button" onClick={handleBack}>
+              <button type="button" className="back-button" onClick={handleBack} disabled={isLoading}>
                 Back
               </button>
-              <button type="submit" className="create-game-button">
-                Create Game
+              <button type="submit" className="create-game-button" disabled={isLoading}>
+                {isLoading ? 'Creating Game...' : 'Create Game'}
               </button>
             </div>
           </form>

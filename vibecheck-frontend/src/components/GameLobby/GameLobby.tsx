@@ -9,26 +9,26 @@ type GameDetails = {
   gameId: string;
   code: string;
   hostUserId: string;
-  currentRound: number;
-  totalRounds: number;
+  rounds: number;
+  // totalRounds: number;
   timePerRound: number;
   playersLimit: number;
   gameMode: string;
   status: string;
   participants: User[];
   // Define the currentRound property that might be causing the issue
-  rounds?: {
-    roundId: string;
-    roundNumber: number;
-    status: number;
-    startTime: string;
-    endTime: string;
-    theme: {
-      id: string;
-      name: string;
-    };
-    songs: any[];
-  };
+  // rounds?: {
+  //   roundId: string;
+  //   roundNumber: number;
+  //   status: number;
+  //   startTime: string;
+  //   endTime: string;
+  //   theme: {
+  //     id: string;
+  //     name: string;
+  //   };
+  //   songs: any[];
+  // };
 };
 
 const GameLobby: React.FC = () => {
@@ -43,6 +43,7 @@ const GameLobby: React.FC = () => {
   const [isHost, setIsHost] = useState(false);
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const [initialSetupComplete, setInitialSetupComplete] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -75,12 +76,10 @@ const GameLobby: React.FC = () => {
       return;
     }
     
-    // Clean up any existing handlers to prevent duplicates
     signalR.removeEventListener("PlayerJoined");
     signalR.removeEventListener("PlayerLeft");
     signalR.removeEventListener("GameStateChanged");
     
-    // Register new handlers
     signalR.onPlayerJoined((updatedParticipants: User[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
@@ -161,7 +160,6 @@ const GameLobby: React.FC = () => {
     initialSetupComplete
   ]);
 
-  // This effect runs when the SignalR connection is established to set up handlers
   useEffect(() => {
     if (signalR.isConnected) {
       setupSignalRHandlers();
@@ -183,7 +181,6 @@ const GameLobby: React.FC = () => {
     joinGameGroupWhenConnected();
   }, [signalR.isConnected, game?.code, hasJoinedGroup, signalR]);
 
-  // Cleanup effect to leave the game group and remove event listeners when the component unmounts
   useEffect(() => {
     return () => {
       if (signalR.connection && hasJoinedGroup && game?.code) {
@@ -222,28 +219,20 @@ const GameLobby: React.FC = () => {
 
   const handleStartGame = async () => {
     if (!gameId || !isHost || !game) return;
-    
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/Game/UpdateGame/${gameId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: 'Active'
-          })
-        }
-      );
       
-      if (!response.ok) {
-        throw new Error('Failed to start game');
-      }
-      
-      navigate(`/gameroom/${gameId}`);
-    } catch (err) {
-      setError('Failed to start the game. Please try again.');
+    // publish a signalR event to start the game and all the players to be notified and redirected to select page 
+    navigate(`/select`);
+  };
+
+  const handleCopyCode = () => {
+    if (game?.code) {
+      navigator.clipboard.writeText(game.code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }).catch(err => {
+        console.error('Failed to copy code: ', err);
+     
+      });
     }
   };
 
@@ -256,70 +245,71 @@ const GameLobby: React.FC = () => {
   }
 
   return (
-    <div className="lobby-container">
-      <div className="lobby-header">
+    <div className="lobby-wrapper">
+      <div className="lobby-container">
         <h1 className="lobby-title">Game Lobby</h1>
-        <div className="game-code-display">
-          Code: <span className="game-code-value">{game.code}</span>
+        <p className="lobby-subtitle wave-text">
+          {'Waiting for players to join...'.split('').map((char, index) => (
+            <span key={index} style={{ animationDelay: `${index * 0.05}s` }}>
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
+        </p>
+
+        <div className="lobby-top-info">
+          <div className="info-item">
+            <span className="info-label">Room Code</span>
+            <div className="info-value-container clickable" onClick={handleCopyCode} title="Click to copy code">
+              <span className="info-value code">{game.code}</span>
+              <span className="copy-icon">{copied ? '✅' : '📋'}</span> 
+              {copied && <span className="copied-text">Copied!</span>}
+            </div>
+          </div>
+          <div className="info-item text-right">
+            <span className="info-label">Players</span>
+            <span className="info-value">{game.participants.length}/{game.playersLimit} joined</span>
+          </div>
         </div>
-      </div>
-      
-      <div className="lobby-content">
-        <div className="game-settings">
-          <div className="setting-item">
-            <span className="setting-icon">🎮</span>
-            <span className="setting-value">{game.gameMode}</span>
+
+        <div className="settings-grid">
+          <div className="setting-box">
+            <span className="setting-label">Rounds</span>
+            <span className="setting-value">{game.rounds}</span>
           </div>
-          <div className="setting-item">
-            <span className="setting-icon">🔄</span>
-            <span className="setting-value">{game.totalRounds} rounds</span>
-          </div>
-          <div className="setting-item">
-            <span className="setting-icon">⏱️</span>
-            <span className="setting-value">{game.timePerRound} seconds</span>
+          <div className="setting-box">
+            <span className="setting-label">Time per Round</span>
+            <span className="setting-value">{game.timePerRound}s</span>
           </div>
         </div>
+
+        <div className="player-grid">
+          {game.participants.map((participant) => (
+            <div className="player-slot" key={participant.id}>
+              <img
+                src={participant.avatar || "/avatars/1.png"}
+                alt={`${participant.username}'s avatar`}
+                className="player-avatar-small"
+              />
+              <span>{participant.username}</span>
+              {participant.id === game.hostUserId && <span className="host-indicator">(Host)</span>}
+            </div>
+          ))}
+        </div>
+
+        {isHost && (
+          <button
+            className="start-game-button"
+            onClick={handleStartGame}
+            disabled={game.participants.length < 1}
+          >
+            Start Game
+          </button>
+        )}
         
-        <div className="players-section">
-          <h2 className="section-title">Players ({game.participants.length}/{game.playersLimit})</h2>
-          <div className="players-list">
-            {game.participants.map((user) => (
-              <div className="player-card" key={user.id}>
-                <img 
-                  src={user.avatar || "/avatars/1.png"} 
-                  alt={`${user.username}'s avatar`} 
-                  className="player-avatar" 
-                />
-                <span className="player-name">
-                  {user.username}
-                  {user.id === game.hostUserId && (
-                    <span className="host-badge">Host</span>
-                  )}
-                </span>
-              </div>
-            ))}
-          </div>
-          
-          {game.participants.length < 2 && (
-            <p className="waiting-message">Waiting for more players to join...</p>
-          )}
-        </div>
-        
-        <div className="lobby-actions">
-          <button className="leave-button" onClick={handleLeaveGame}>
+         <button className="leave-game-button" onClick={handleLeaveGame}>
             Leave Game
           </button>
-          
-          {isHost && (
-            <button 
-              className="start-button" 
-              onClick={handleStartGame}
-              disabled={game.participants.length < 2}
-            >
-              {game.participants.length < 2 ? 'Need More Players' : 'Start Game'}
-            </button>
-          )}
-        </div>
+
       </div>
     </div>
   );
