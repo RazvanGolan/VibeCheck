@@ -29,7 +29,9 @@ function App() {
             } />
              <Route path="/creategame" element={
               <ProtectedRoute>
-                <CreateGame />
+                <Layout>
+                  <CreateGame />
+                </Layout>
               </ProtectedRoute>
             } />
             <Route path="/lobby/:gameId" element={
