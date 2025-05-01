@@ -71,6 +71,19 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(updatedGame);
         }
 
+        public async Task<GameDto> UpdateGameStatusAsync(Guid id, GameStatus status)
+        {
+            var game = await _gameRepository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException($"Game with id {id} not found");
+            
+            if (!Enum.IsDefined(typeof(GameStatus), status))
+                throw new InvalidOperationException("Invalid game status");
+            
+            game.Status = status;
+            var updatedGame = await _gameRepository.UpdateAsync(game);
+            return _mapper.Map<GameDto>(updatedGame);
+        }
+
         public async Task<GameDto> DeleteGameAsync(Guid id)
         {
             var game = await _gameRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Game with id {id} not found");

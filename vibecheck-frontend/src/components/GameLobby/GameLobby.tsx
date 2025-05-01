@@ -79,6 +79,7 @@ const GameLobby: React.FC = () => {
     signalR.removeEventListener("PlayerJoined");
     signalR.removeEventListener("PlayerLeft");
     signalR.removeEventListener("GameStateChanged");
+    signalR.removeEventListener("GameStarted");
     
     signalR.onPlayerJoined((updatedParticipants: User[]) => {
       setGame(prevGame => {
@@ -112,6 +113,12 @@ const GameLobby: React.FC = () => {
       if (gameStatus === 'Active') {
         navigate(`/gameroom/${gameId}`);
       }
+    });
+    
+    signalR.onGameStarted((gameData: GameDetails) => {
+      setGame(gameData);
+      // Redirect all users to the select page of the game
+      navigate(`/select/${gameId}`);
     });
   }, [signalR, gameId, navigate]);
 
@@ -220,8 +227,19 @@ const GameLobby: React.FC = () => {
   const handleStartGame = async () => {
     if (!gameId || !isHost || !game) return;
       
-    // publish a signalR event to start the game and all the players to be notified and redirected to select page 
-    navigate(`/select`);
+    // Trigger the StartGame event on the hub to notify all players
+    if (signalR.connection && signalR.isConnected && game.code) {
+      try {
+        await signalR.connection.invoke("StartGame", game.code);
+        // The navigation will happen in the GameStarted event handler
+      } catch (err) {
+        console.error("Error starting game:", err);
+        setError("Failed to start game. Please try again.");
+      }
+    } else {
+      console.error("SignalR connection is not established.");
+      setError("Failed to start game. Please try again.");
+    }
   };
 
   const handleCopyCode = () => {

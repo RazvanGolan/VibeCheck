@@ -1,4 +1,5 @@
 ﻿using VibeCheck.DAL.Dtos.Games;
+using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.BL.Interfaces
 {
@@ -13,6 +14,8 @@ namespace VibeCheck.BL.Interfaces
         Task<GameDto> GetGameByCodeAsync(string gameCode);
 
         Task<GameDto> UpdateGameAsync(Guid id, UpdateGameDto updateGameDto);
+        
+        Task<GameDto> UpdateGameStatusAsync(Guid id, GameStatus status);
 
         Task<GameDto> DeleteGameAsync(Guid id);
 

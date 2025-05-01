@@ -14,6 +14,7 @@ interface SignalRContextType {
   onPlayerLeft: (callback: (participants: any[]) => void) => void;
   onGameStateChanged: (callback: (gameStatus: string) => void) => void;
   onRoundStarted: (callback: (roundNumber: number, theme: string) => void) => void;
+  onGameStarted: (callback: (gameData: any) => void) => void;
   removeEventListener: (eventName: string) => void;
 }
 
@@ -29,6 +30,7 @@ const SignalRContext = createContext<SignalRContextType>({
   onPlayerLeft: () => {},
   onGameStateChanged: () => {},
   onRoundStarted: () => {},
+  onGameStarted: () => {},
   removeEventListener: () => {}
 });
 
@@ -188,6 +190,16 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   }, [connection, removeEventListener]);
 
+  const onGameStarted = useCallback((callback: (gameData: any) => void) => {
+    if (connection) {
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("GameStarted");
+      connection.on("GameStarted", (gameData) => {
+        callback(gameData);
+      });
+    }
+  }, [connection, removeEventListener]);
+
   const value = {
     connection,
     isConnected,
@@ -200,6 +212,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     onPlayerLeft,
     onGameStateChanged,
     onRoundStarted,
+    onGameStarted,
     removeEventListener
   };
 

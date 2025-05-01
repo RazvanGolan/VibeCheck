@@ -42,7 +42,7 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/select" element={
+            <Route path="/select/:gameId" element={
               <ProtectedRoute>
                 <Layout>
                   <SongSelect />

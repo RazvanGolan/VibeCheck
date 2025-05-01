@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using VibeCheck.BL.Interfaces;
+using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.PL.Hubs;
 
@@ -39,6 +40,14 @@ public class GameHub : Hub
     public async Task StartGame(string gameCode)
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
+        
+        // Update the game status to active if needed
+        if (game.Status is not GameStatus.Active)
+        {
+            game.Status = GameStatus.Active;
+            await _gameService.UpdateGameStatusAsync(game.GameId, GameStatus.Active);
+        }
+        
         await Clients.Group(gameCode).SendAsync("GameStarted", game);
     }
     
