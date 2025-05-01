@@ -1,5 +1,5 @@
 import './App.css';
-import Layout from './components/Layout/Layout';
+import Layout from './components/layout/Layout';
 import MainPage from './components/MainPage/MainPage';
 import Login from './components/LoginPage/Login';
 import CreateGame from './components/CreateGame/CreateGame';
