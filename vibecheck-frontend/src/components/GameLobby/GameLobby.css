@@ -155,9 +155,17 @@
 }
 
 .host-indicator {
-  font-size: 11px;
   color: #64748b;
-  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.crown-icon {
+  fill: #333;
+  stroke: #333;
+  stroke-width: 0.5px;
+  padding: 1px;
 }
 
 .start-game-button,
@@ -282,4 +290,4 @@
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
-} 
+}

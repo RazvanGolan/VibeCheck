@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import { useSignalR } from '../../context/SignalRProvider';
 import './GameLobby.css';
-import { User } from '../../types/user';
+import { User, UserDto } from '../../types/user';
 
 type GameDetails = {
   gameId: string;
@@ -15,7 +15,7 @@ type GameDetails = {
   playersLimit: number;
   gameMode: string;
   status: string;
-  participants: User[];
+  participants: UserDto[];
   // Define the currentRound property that might be causing the issue
   // rounds?: {
   //   roundId: string;
@@ -81,7 +81,7 @@ const GameLobby: React.FC = () => {
     signalR.removeEventListener("GameStateChanged");
     signalR.removeEventListener("GameStarted");
     
-    signalR.onPlayerJoined((updatedParticipants: User[]) => {
+    signalR.onPlayerJoined((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -91,7 +91,7 @@ const GameLobby: React.FC = () => {
       });
     });
     
-    signalR.onPlayerLeft((updatedParticipants: User[]) => {
+    signalR.onPlayerLeft((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -302,14 +302,22 @@ const GameLobby: React.FC = () => {
 
         <div className="player-grid">
           {game.participants.map((participant) => (
-            <div className="player-slot" key={participant.id}>
+            <div className="player-slot" key={participant.userId}>
               <img
                 src={participant.avatar || "/avatars/1.png"}
                 alt={`${participant.username}'s avatar`}
                 className="player-avatar-small"
               />
-              <span>{participant.username}</span>
-              {participant.id === game.hostUserId && <span className="host-indicator">(Host)</span>}
+              <span>
+                {participant.username} 
+                {participant.userId === game.hostUserId && (
+                  <span className="host-indicator">
+                    <svg className="crown-icon" viewBox="0 0 24 24" width="16" height="16">
+                      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v2H5v-2z" />
+                    </svg>
+                  </span>
+                )}
+              </span>
             </div>
           ))}
         </div>

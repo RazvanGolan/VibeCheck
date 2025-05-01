@@ -3,3 +3,9 @@ export type User = {
   username: string;
   avatar: string;
 }
+
+export type UserDto = {
+  userId: string;
+  username: string;
+  avatar: string;
+}
