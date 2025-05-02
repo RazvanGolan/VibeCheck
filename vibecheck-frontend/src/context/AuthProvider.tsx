@@ -73,6 +73,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = () => {
+    try {
+      fetch(`${API_BASE_URL}/api/Users/Logout`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(user?.id)
+      });
+    }
+    catch (error) {
+      console.error("Sign out failed:", error);
+    }
+
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     setToken(null);

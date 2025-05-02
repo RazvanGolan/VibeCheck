@@ -15,14 +15,16 @@ namespace VibeCheck.BL.Services;
 public class AuthService : IAuthService
 {
     private readonly IRepository<User> _userRepository;
+    private readonly IGameService _gameService;
     private readonly IConfiguration _configuration;
     private readonly IMapper _mapper;
 
-    public AuthService(IRepository<User> userRepository, IConfiguration configuration, IMapper mapper)
+    public AuthService(IRepository<User> userRepository, IConfiguration configuration, IMapper mapper, IGameService gameService)
     {
         _userRepository = userRepository;
         _configuration = configuration;
         _mapper = mapper;
+        _gameService = gameService;
     }
     
     public async Task<AuthResponseDto> LoginAsync(LoginUserDto loginDto)
@@ -42,6 +44,16 @@ public class AuthService : IAuthService
             Token = token,
             User = _mapper.Map<UserDto>(user)
         };
+    }
+
+    public async Task LogoutAsync(Guid userId)
+    {
+        var result = await _gameService.RemoveUserFromGameAsync(userId);
+
+        if (!result)
+        {
+            await _userRepository.DeleteByIdAsync(userId);
+        }
     }
 
     # region Private Methods

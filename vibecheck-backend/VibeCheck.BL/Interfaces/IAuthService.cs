@@ -6,4 +6,5 @@ namespace VibeCheck.BL.Interfaces;
 public interface IAuthService
 {
     Task<AuthResponseDto> LoginAsync(LoginUserDto loginUserDto);
+    Task LogoutAsync(Guid userId);
 }
