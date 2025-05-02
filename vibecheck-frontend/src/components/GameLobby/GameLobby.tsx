@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import { useSignalR } from '../../context/SignalRProvider';
 import './GameLobby.css';
-import { User } from '../../types/user';
+import { UserDto } from '../../types/user';
 
 type GameDetails = {
   gameId: string;
@@ -14,7 +14,7 @@ type GameDetails = {
   playersLimit: number;
   gameMode: string;
   status: string;
-  participants: User[];
+  participants: UserDto[];
 };
 
 const GameLobby: React.FC = () => {
@@ -30,8 +30,23 @@ const GameLobby: React.FC = () => {
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const [initialSetupComplete, setInitialSetupComplete] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+  // Check if the current user is a participant in the game
+  const checkAuthorization = useCallback((gameData: GameDetails | null) => {
+    if (!gameData || !user) return true;
+    
+    const isParticipant = gameData.participants.some(participant => participant.userId === user.id);
+    
+    if (!isParticipant) {
+      setIsAuthorized(false);
+      return false;
+    }
+    
+    return true;
+  }, [user]);
 
   const fetchGameDetails = useCallback(async () => {
     if (!gameId) return;
@@ -50,12 +65,14 @@ const GameLobby: React.FC = () => {
         setIsHost(gameData.hostUserId === user.id);
       }
       
+      checkAuthorization(gameData);
+      
       return gameData;
     } catch (err) {
       setError('Failed to load game data. Please try again.');
       return null;
     }
-  }, [gameId, user, API_BASE_URL]);
+  }, [gameId, user, API_BASE_URL, checkAuthorization]);
 
   const setupSignalRHandlers = useCallback(() => {
     if (!signalR.connection || !signalR.isConnected) {
@@ -66,7 +83,7 @@ const GameLobby: React.FC = () => {
     signalR.removeEventListener("PlayerLeft");
     signalR.removeEventListener("GameStateChanged");
     
-    signalR.onPlayerJoined((updatedParticipants: User[]) => {
+    signalR.onPlayerJoined((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -76,7 +93,7 @@ const GameLobby: React.FC = () => {
       });
     });
     
-    signalR.onPlayerLeft((updatedParticipants: User[]) => {
+    signalR.onPlayerLeft((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -116,7 +133,8 @@ const GameLobby: React.FC = () => {
         if (!gameData) {
           return;
         }
-                
+
+        checkAuthorization(gameData);
         setupSignalRHandlers();
         
         if (signalR.isConnected && gameData.code && !hasJoinedGroup) {
@@ -141,9 +159,12 @@ const GameLobby: React.FC = () => {
     user, 
     fetchGameDetails, 
     signalR.isConnected,
+    signalR,
     hasJoinedGroup, 
     setupSignalRHandlers, 
-    initialSetupComplete
+    initialSetupComplete,
+    checkAuthorization,
+    navigate
   ]);
 
   useEffect(() => {
@@ -242,8 +263,28 @@ const GameLobby: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isAuthorized) {
+
+      const redirectTimer = setTimeout(() => {
+        navigate('/');
+      }, 3500);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthorized, navigate]);
+
   if (isLoading) {
     return <div className="loading">Loading game lobby...</div>;
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div>
+        <div style={{fontSize: "30px", color: "red", fontFamily:"cursive", fontWeight:"500"}}>You are not authorized to access this game. Leave now or you shall regret it.</div>
+        <img src="https://media1.tenor.com/m/Rv-IfOOXPSIAAAAC/you-shall-not-pass-lotr.gif" alt="Gandalf - You Shall Not Pass" style={{marginTop: "60px", width: "100%", textAlign: "center"}}/>
+      </div>
+    );
   }
 
   if (error || !game) {
@@ -290,14 +331,14 @@ const GameLobby: React.FC = () => {
 
         <div className="player-grid">
           {game.participants.map((participant) => (
-            <div className="player-slot" key={participant.id}>
+            <div className="player-slot" key={participant.userId}>
               <img
                 src={participant.avatar || "/avatars/1.png"}
                 alt={`${participant.username}'s avatar`}
                 className="player-avatar-small"
               />
               <span>{participant.username}</span>
-              {participant.id === game.hostUserId && <span className="host-indicator">(Host)</span>}
+              {participant.userId === game.hostUserId && <span className="host-indicator">(Host)</span>}
             </div>
           ))}
         </div>

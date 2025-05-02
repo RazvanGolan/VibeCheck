@@ -86,7 +86,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
       setError("Failed to connect to game server. Please try again later.");
       setConnecting(false);
     }
-  }, [hubUrl, user, connecting, isConnected]);
+  }, [user, connecting, isConnected]);
 
   const removeEventListener = useCallback((eventName: string) => {
     if (connection) {
@@ -94,9 +94,7 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   }, [connection]);
 
-  useEffect(() => {
-    let isMounted = true;
-    
+  useEffect(() => {    
     const createConnection = async () => {
       if (connecting || isConnected || !user) return;
       
@@ -108,10 +106,6 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
     
     return () => {
-      isMounted = false;
-      
-      // Do not disconnect on unmount - let the connection persist
-      // We'll clean it up only when the user logs out or the app closes
     };
   }, [user, connecting, isConnected, initializeConnection]);
 
