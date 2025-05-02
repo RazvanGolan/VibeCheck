@@ -122,16 +122,16 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(game);
         }
 
-        public async Task<bool> RemoveUserFromGameAsync(Guid userId)
+        public async Task<string?> RemoveUserFromGameAsync(Guid userId)
         {
             var game = await _gameRepository.GetByUserIdAsync(userId);
             
             if (game is null)
-                return false;
+                return null;
 
             _ = await LeaveGameAsync(game.GameId, userId);
 
-            return true;
+            return game.Code;
         }
 
         #region Private Methods

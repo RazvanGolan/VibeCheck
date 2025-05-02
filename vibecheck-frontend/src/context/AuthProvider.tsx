@@ -72,9 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = () => {
+  const signOut = async () => {
     try {
-      fetch(`${API_BASE_URL}/api/Users/Logout`, {
+      const response = await fetch(`${API_BASE_URL}/api/Users/Logout`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -82,6 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
         body: JSON.stringify(user?.id)
       });
+
+      if (!response.ok) {
+        console.error("Logout failed:", response.statusText);
+      }
     }
     catch (error) {
       console.error("Sign out failed:", error);

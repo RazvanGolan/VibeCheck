@@ -207,6 +207,58 @@
   color: #94a3b8;
 }
 
+/* Invite link styles */
+.invite-link-container {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.invite-link-label {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.invite-link-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-link-input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #334155;
+  background-color: #f8fafc;
+}
+
+.copy-invite-link-button {
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+  background-size: 300% 300%;
+  animation: gradientBG 8s ease infinite;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-invite-link-button:hover {
+  filter: brightness(1.15);
+}
+
 @media screen and (max-width: 600px) {
   .lobby-container {
     padding: 30px 20px;
@@ -236,6 +288,15 @@
   
   .player-grid {
      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .invite-link-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .copy-invite-link-button {
+    width: 100%;
   }
 }
 
