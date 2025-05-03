@@ -5,6 +5,7 @@ import { useSignalR } from '../../context/SignalRProvider';
 import './GameLobby.css';
 import { UserDto } from '../../types/user';
 import { GameDetails } from '../../types/gameTypes';
+import QRCode from 'react-qr-code';
 
 const GameLobby: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -23,6 +24,7 @@ const GameLobby: React.FC = () => {
   const [copiedInviteLink, setCopiedInviteLink] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(true);
   const [pendingGameJoin, setPendingGameJoin] = useState<string | null>(null);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
   const CURRENT_URL = window.location.origin;
@@ -271,6 +273,10 @@ const GameLobby: React.FC = () => {
     }
   };
 
+  const toggleQRCodeModal = () => {
+    setShowQRCodeModal(prev => !prev);
+  };
+
   // Handle authentication and join game process
   useEffect(() => {
     const joinGameWithToken = async () => {
@@ -366,6 +372,37 @@ const GameLobby: React.FC = () => {
           </div>
         </div>
 
+        <div className="invite-link-container">
+            <div className="invite-link-wrapper">
+              <button className="copy-invite-link-button" onClick={handleCopyInviteLink}>
+                {copiedInviteLink ? 'Copied!' : 'Copy Invite Link'}
+              </button>
+              <button className="qr-code-button" onClick={toggleQRCodeModal}>
+                Show QR Code
+              </button>
+            </div>
+          </div>
+
+          {showQRCodeModal && (
+            <div className="qr-code-modal-overlay" onClick={toggleQRCodeModal}>
+              <div className="qr-code-modal" onClick={e => e.stopPropagation()}>
+                <h3>Scan QR Code to Join</h3>
+                <div className="qr-code-container">
+                  {game?.code && (
+                    <QRCode
+                      value={`${CURRENT_URL}/lobby/${gameId}?invite=${game.code}`}
+                      size={200}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="H"
+                    />
+                  )}
+                </div>
+                <button className="close-qr-button" onClick={toggleQRCodeModal}>Close</button>
+              </div>
+            </div>
+          )}
+
         <div className="settings-grid">
           <div className="setting-box">
             <span className="setting-label">Rounds</span>
@@ -404,23 +441,6 @@ const GameLobby: React.FC = () => {
          <button className="leave-game-button" onClick={handleLeaveGame}>
             Leave Game
           </button>
-
-          <div className="invite-link-container">
-            <span className="invite-link-label">Invite Link</span>
-            <div className="invite-link-wrapper">
-              <input
-                type="text"
-                value={`${CURRENT_URL}/lobby/${gameId}?invite=${game?.code}`}
-                readOnly
-                className="invite-link-input"
-                id="inviteLinkInput"
-              />
-              <button className="copy-invite-link-button" onClick={handleCopyInviteLink}>
-                {copiedInviteLink ? '✅ Copied!' : '📋 Copy Invite Link'}
-              </button>
-            </div>
-          </div>
-
       </div>
     </div>
   );
