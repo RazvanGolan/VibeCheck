@@ -57,7 +57,6 @@ namespace VibeCheck.PL.Controllers
             return Ok(response);
         }
         
-        [Authorize]
         [HttpPost("Logout")]
         public async Task<IActionResult> Logout([FromBody] Guid userId)
         {

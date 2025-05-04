@@ -48,14 +48,10 @@ public class AuthService : IAuthService
 
     public async Task<string?> LogoutAsync(Guid userId)
     {
-        var result = await _gameService.RemoveUserFromGameAsync(userId);
+        var gameCode = await _gameService.RemoveUserFromGameAsync(userId);
+        await _userRepository.DeleteByIdAsync(userId);
 
-        if (string.IsNullOrEmpty(result))
-        {
-            await _userRepository.DeleteByIdAsync(userId);
-        }
-
-        return result;
+        return gameCode;
     }
 
     # region Private Methods

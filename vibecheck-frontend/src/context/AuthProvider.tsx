@@ -1,6 +1,7 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import { User } from '../types/user';
 import { LoginResponse } from '../types/auth';
+import { isTokenExpired } from '../utils/jwtUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -25,19 +26,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-
-    setLoading(false);
-  }, []);
 
   const signIn = async (username: string) => {
     try {
@@ -72,25 +60,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/Users/Logout`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(user?.id)
-      });
-
-      if (!response.ok) {
-        console.error("Logout failed:", response.statusText);
+  const signOut = async () => {    
+    if (user?.id && token) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/Users/Logout`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' 
+          },
+          body: JSON.stringify(user?.id)
+        });
+  
+        if (!response.ok) {
+          console.error("Logout API failed:", response.statusText);
+        }
+      }
+      catch (error) {
+        console.error("Sign out API call failed:", error);
       }
     }
-    catch (error) {
-      console.error("Sign out failed:", error);
-    }
-
+    
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     setToken(null);
@@ -98,8 +88,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  // Initialize auth state on mount/reload
+  useEffect(() => {
+    const initializeAuth = () => {
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUser = localStorage.getItem('auth_user');
+      
+      if (storedToken && storedUser) {
+        try {
+          const userData = JSON.parse(storedUser);
+          
+          if (isTokenExpired(storedToken)) {            
+            if (userData?.id) {
+              fetch(`${API_BASE_URL}/api/Users/Logout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData.id)
+              }).catch(err => {
+                console.error("Logout API failed during token expiration:", err);
+              });
+            }
+            
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            setToken(null);
+            setIsAuthenticated(false);
+            setUser(null);
+          } else {
+            setToken(storedToken);
+            setUser(userData);
+            setIsAuthenticated(true);
+          }
+        } catch (err) {
+          console.error("Error processing stored auth data:", err);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+          setToken(null);
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } else {
+        setToken(null);
+        setIsAuthenticated(false); 
+        setUser(null);
+      }
+      
+      setLoading(false);
+    };
+    
+    initializeAuth();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      user, 
+      token, 
+      loading, 
+      signIn, 
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );
