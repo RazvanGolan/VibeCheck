@@ -22,7 +22,6 @@ namespace VibeCheck.BL.Interfaces
         Task<GameDto> JoinGameAsync(string gameCode, Guid userId);
 
         Task<GameDto> LeaveGameAsync(Guid gameId, Guid userId);
-<<<<<<< HEAD
 
         Task<GameDto> RemovePlayerFromGameAsync(Guid gameId, Guid hostUserId, Guid playerToRemoveId);
 
@@ -31,8 +30,6 @@ namespace VibeCheck.BL.Interfaces
         Task<SongDto> SubmitSongAsync(SubmitSongDto songDto);
         Task<bool> VoteForSongAsync(VoteDto voteDto);
         Task<LeaderboardResultDto> GetLeaderboardAndAdvanceRoundAsync(Guid gameId);
-=======
         Task<string?> RemoveUserFromGameAsync(Guid userId);
->>>>>>> origin/main
     }
 }
