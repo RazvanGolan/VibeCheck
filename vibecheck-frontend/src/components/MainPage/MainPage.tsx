@@ -1,9 +1,8 @@
-import { useState, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, KeyboardEvent, ChangeEvent, useEffect } from 'react';
 import './MainPage.css';
 import { useAuth } from '../../context/AuthProvider';
 import { LiveGame } from '../../types/gameTypes';
 import { useNavigate} from 'react-router-dom';
-import { json } from 'stream/consumers';
 
 function MainPage() {
     const { isAuthenticated, user } = useAuth();
@@ -13,6 +12,11 @@ function MainPage() {
     const navigate = useNavigate();
 
     const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+    // Scroll to top on component mount
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     // Mock games data - this would come from your SignalR hub
     const liveGames: LiveGame[] = [

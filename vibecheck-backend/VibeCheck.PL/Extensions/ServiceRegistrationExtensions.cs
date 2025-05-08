@@ -15,7 +15,9 @@ public static class ServiceRegistrationExtensions
 {
     public static IServiceCollection AddDatabaseConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("VibeCheckContext");
+        // Try to get connection string from environment variable first (for deployed state), then fall back to configuration (for local development) 
+        var connectionString = Environment.GetEnvironmentVariable("POSTGRESQLCONNSTR_VibeCheckContext") ?? configuration.GetConnectionString("VibeCheckContext");
+        
         services.AddDbContext<VibeCheckContext>(options => options.UseNpgsql(connectionString));
         
         return services;

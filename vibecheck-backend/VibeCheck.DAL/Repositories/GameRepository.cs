@@ -30,6 +30,7 @@ namespace VibeCheck.DAL.Repositories
                 .FirstOrDefaultAsync(g => g.Code == code);
         }
 
+<<<<<<< HEAD
         public async Task<Game?> GetByIdWithDetailsAsync(Guid id)
         {
             return await _context.Set<Game>()
@@ -44,5 +45,13 @@ namespace VibeCheck.DAL.Repositories
                         .ThenInclude(s => s.Votes)
                 .FirstOrDefaultAsync(g => g.GameId == id);
         } 
+=======
+        public async Task<Game?> GetByUserIdAsync(Guid userId)
+        {
+            return await _context.Games
+                .Include(g => g.Participants)
+                .FirstOrDefaultAsync(g => g.Participants.Any(p => p.UserId == userId));
+        }
+>>>>>>> origin/main
     }
 }

@@ -181,6 +181,7 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(game);
         }
 
+<<<<<<< HEAD
         public async Task<GameDto> RemovePlayerFromGameAsync(Guid gameId, Guid hostUserId, Guid playerToRemoveId)
         {
             var game = await _gameRepository.GetByIdAsync(gameId)
@@ -456,6 +457,20 @@ namespace VibeCheck.BL.Services
         }
 
 
+=======
+        public async Task<string?> RemoveUserFromGameAsync(Guid userId)
+        {
+            var game = await _gameRepository.GetByUserIdAsync(userId);
+            
+            if (game is null)
+                return null;
+
+            _ = await LeaveGameAsync(game.GameId, userId);
+
+            return game.Code;
+        }
+
+>>>>>>> origin/main
         #region Private Methods
 
         private string GenerateUniqueCode()

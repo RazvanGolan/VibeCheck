@@ -1,26 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import { useSignalR } from '../../context/SignalRProvider';
 import './GameLobby.css';
-import { User } from '../../types/user';
-
-type GameDetails = {
-  gameId: string;
-  code: string;
-  hostUserId: string;
-  rounds: number;
-  timePerRound: number;
-  playersLimit: number;
-  gameMode: string;
-  status: string;
-  participants: User[];
-};
+import { UserDto } from '../../types/user';
+import { GameDetails } from '../../types/gameTypes';
+import QRCode from 'react-qr-code';
 
 const GameLobby: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const signalR = useSignalR();
   
   const [game, setGame] = useState<GameDetails | null>(null);
@@ -29,8 +20,31 @@ const GameLobby: React.FC = () => {
   const [isHost, setIsHost] = useState(false);
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const [initialSetupComplete, setInitialSetupComplete] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [pendingGameJoin, setPendingGameJoin] = useState<string | null>(null);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const CURRENT_URL = window.location.origin;
+
+  // Check if the current user is a participant in the game
+  const checkAuthorization = useCallback((gameData: GameDetails | null) => {
+    if (!gameData || !user) return true;
+    
+    if (pendingGameJoin)
+      return true;
+
+    const isParticipant = gameData.participants.some(participant => participant.userId === user.id);
+    
+    if (!isParticipant) {
+      setIsAuthorized(false);
+      return false;
+    }
+    
+    return true;
+  }, [user, pendingGameJoin]);
 
   const fetchGameDetails = useCallback(async () => {
     if (!gameId) return;
@@ -49,25 +63,25 @@ const GameLobby: React.FC = () => {
         setIsHost(gameData.hostUserId === user.id);
       }
       
+      checkAuthorization(gameData);
+      
       return gameData;
     } catch (err) {
       setError('Failed to load game data. Please try again.');
       return null;
     }
-  }, [gameId, user, API_BASE_URL]);
+  }, [gameId, user, API_BASE_URL, checkAuthorization]);
 
   const setupSignalRHandlers = useCallback(() => {
     if (!signalR.connection || !signalR.isConnected) {
       return;
     }
     
-    // Clean up any existing handlers to prevent duplicates
     signalR.removeEventListener("PlayerJoined");
     signalR.removeEventListener("PlayerLeft");
     signalR.removeEventListener("GameStateChanged");
     
-    // Register new handlers
-    signalR.onPlayerJoined((updatedParticipants: User[]) => {
+    signalR.onPlayerJoined((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -77,7 +91,7 @@ const GameLobby: React.FC = () => {
       });
     });
     
-    signalR.onPlayerLeft((updatedParticipants: User[]) => {
+    signalR.onPlayerLeft((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
         if (!prevGame) return null;
         return {
@@ -117,7 +131,8 @@ const GameLobby: React.FC = () => {
         if (!gameData) {
           return;
         }
-                
+
+        checkAuthorization(gameData);
         setupSignalRHandlers();
         
         if (signalR.isConnected && gameData.code && !hasJoinedGroup) {
@@ -142,12 +157,14 @@ const GameLobby: React.FC = () => {
     user, 
     fetchGameDetails, 
     signalR.isConnected,
+    signalR,
     hasJoinedGroup, 
     setupSignalRHandlers, 
-    initialSetupComplete
+    initialSetupComplete,
+    checkAuthorization,
+    navigate
   ]);
 
-  // This effect runs when the SignalR connection is established to set up handlers
   useEffect(() => {
     if (signalR.isConnected) {
       setupSignalRHandlers();
@@ -169,7 +186,6 @@ const GameLobby: React.FC = () => {
     joinGameGroupWhenConnected();
   }, [signalR.isConnected, game?.code, hasJoinedGroup, signalR]);
 
-  // Cleanup effect to leave the game group and remove event listeners when the component unmounts
   useEffect(() => {
     return () => {
       if (signalR.connection && hasJoinedGroup && game?.code) {
@@ -233,8 +249,96 @@ const GameLobby: React.FC = () => {
     }
   };
 
+  const handleCopyCode = () => {
+    if (game?.code) {
+      navigator.clipboard.writeText(game.code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }).catch(err => {
+        console.error('Failed to copy code: ', err);
+     
+      });
+    }
+  };
+
+  const handleCopyInviteLink = () => {
+    if (game?.code) {
+      const inviteLink = `${CURRENT_URL}/lobby/${gameId}?invite=${game.code}`;
+      navigator.clipboard.writeText(inviteLink).then(() => {
+        setCopiedInviteLink(true);
+        setTimeout(() => setCopiedInviteLink(false), 1500);
+      }).catch(err => {
+        console.error('Failed to copy invite link: ', err);
+      });
+    }
+  };
+
+  const toggleQRCodeModal = () => {
+    setShowQRCodeModal(prev => !prev);
+  };
+
+  // Handle authentication and join game process
+  useEffect(() => {
+    const joinGameWithToken = async () => {
+      if (pendingGameJoin && user && isAuthenticated) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/Game/JoinGame/${pendingGameJoin}/${user.id}`,
+            { method: 'POST' }
+          );
+          
+          if (response.ok) {
+            const gameData = await response.json();
+            navigate(`/lobby/${gameData.gameId}`, { replace: true });
+          } else {
+            setError('Failed to join game. The invite might be invalid or expired.');
+          }
+        } catch (err) {
+          setError('An error occurred while joining the game.');
+        }
+      }
+    };
+    
+    if (!isAuthenticated && pendingGameJoin) {
+      navigate('/login', { 
+        state: { 
+          from: `/lobby/${gameId}?invite=${pendingGameJoin}` 
+        } 
+      });
+      return;
+    }
+
+    joinGameWithToken();
+  }, [pendingGameJoin, user, isAuthenticated, API_BASE_URL, gameId, navigate]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const inviteToken = searchParams.get('invite');
+    
+    if (inviteToken) {
+      setPendingGameJoin(inviteToken);
+    }
+
+    if (!isAuthorized && !pendingGameJoin) {
+      const redirectTimer = setTimeout(() => {
+        navigate('/');
+      }, 3500);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthorized, location.search, navigate, pendingGameJoin]);
+
   if (isLoading) {
     return <div className="loading">Loading game lobby...</div>;
+  }
+
+  if (!isAuthorized && !pendingGameJoin) {
+    return (
+      <div>
+        <div style={{fontSize: "30px", color: "red", fontFamily:"cursive", fontWeight:"500"}}>You are not authorized to access this game. Leave now or you shall regret it.</div>
+        <img src="https://media1.tenor.com/m/Rv-IfOOXPSIAAAAC/you-shall-not-pass-lotr.gif" alt="Gandalf - You Shall Not Pass" style={{marginTop: "60px", width: "100%", textAlign: "center"}}/>
+      </div>
+    );
   }
 
   if (error || !game) {
@@ -242,70 +346,101 @@ const GameLobby: React.FC = () => {
   }
 
   return (
-    <div className="lobby-container">
-      <div className="lobby-header">
+    <div className="lobby-wrapper">
+      <div className="lobby-container">
         <h1 className="lobby-title">Game Lobby</h1>
-        <div className="game-code-display">
-          Code: <span className="game-code-value">{game.code}</span>
+        <p className="lobby-subtitle wave-text">
+          {'Waiting for players to join...'.split('').map((char, index) => (
+            <span key={index} style={{ animationDelay: `${index * 0.05}s` }}>
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
+        </p>
+
+        <div className="lobby-top-info">
+          <div className="info-item">
+            <span className="info-label">Room Code</span>
+            <div className="info-value-container clickable" onClick={handleCopyCode} title="Click to copy code">
+              <span className="info-value code">{game.code}</span>
+              <span className="copy-icon">{copied ? '✅' : '📋'}</span> 
+              {copied && <span className="copied-text">Copied!</span>}
+            </div>
+          </div>
+          <div className="info-item text-right">
+            <span className="info-label">Players</span>
+            <span className="info-value">{game.participants.length}/{game.playersLimit} joined</span>
+          </div>
         </div>
-      </div>
-      
-      <div className="lobby-content">
-        <div className="game-settings">
-          <div className="setting-item">
-            <span className="setting-icon">🎮</span>
-            <span className="setting-value">{game.gameMode}</span>
+
+        <div className="invite-link-container">
+            <div className="invite-link-wrapper">
+              <button className="copy-invite-link-button" onClick={handleCopyInviteLink}>
+                {copiedInviteLink ? 'Copied!' : 'Copy Invite Link'}
+              </button>
+              <button className="qr-code-button" onClick={toggleQRCodeModal}>
+                Show QR Code
+              </button>
+            </div>
           </div>
-          <div className="setting-item">
-            <span className="setting-icon">🔄</span>
-            <span className="setting-value">{game.rounds} rounds</span>
-          </div>
-          <div className="setting-item">
-            <span className="setting-icon">⏱️</span>
-            <span className="setting-value">{game.timePerRound} seconds</span>
-          </div>
-        </div>
-        
-        <div className="players-section">
-          <h2 className="section-title">Players ({game.participants.length}/{game.playersLimit})</h2>
-          <div className="players-list">
-            {game.participants.map((user) => (
-              <div className="player-card" key={user.id}>
-                <img 
-                  src={user.avatar || "/avatars/1.png"} 
-                  alt={`${user.username}'s avatar`} 
-                  className="player-avatar" 
-                />
-                <span className="player-name">
-                  {user.username}
-                  {user.id === game.hostUserId && (
-                    <span className="host-badge">Host</span>
+
+          {showQRCodeModal && (
+            <div className="qr-code-modal-overlay" onClick={toggleQRCodeModal}>
+              <div className="qr-code-modal" onClick={e => e.stopPropagation()}>
+                <h3>Scan QR Code to Join</h3>
+                <div className="qr-code-container">
+                  {game?.code && (
+                    <QRCode
+                      value={`${CURRENT_URL}/lobby/${gameId}?invite=${game.code}`}
+                      size={200}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="H"
+                    />
                   )}
-                </span>
+                </div>
+                <button className="close-qr-button" onClick={toggleQRCodeModal}>Close</button>
               </div>
-            ))}
-          </div>
-          
-          {game.participants.length < 2 && (
-            <p className="waiting-message">Waiting for more players to join...</p>
+            </div>
           )}
+
+        <div className="settings-grid">
+          <div className="setting-box">
+            <span className="setting-label">Rounds</span>
+            <span className="setting-value">{game.rounds}</span>
+          </div>
+          <div className="setting-box">
+            <span className="setting-label">Time per Round</span>
+            <span className="setting-value">{game.timePerRound}s</span>
+          </div>
         </div>
+
+        <div className="player-grid">
+          {game.participants.map((participant) => (
+            <div className="player-slot" key={participant.userId}>
+              <img
+                src={participant.avatar || "/avatars/1.png"}
+                alt={`${participant.username}'s avatar`}
+                className="player-avatar-small"
+              />
+              <span>{participant.username}</span>
+              {participant.userId === game.hostUserId && <span className="host-indicator">(Host)</span>}
+            </div>
+          ))}
+        </div>
+
+        {isHost && (
+          <button
+            className="start-game-button"
+            onClick={handleStartGame}
+            disabled={game.participants.length < 1}
+          >
+            Start Game
+          </button>
+        )}
         
-        <div className="lobby-actions">
-          <button className="leave-button" onClick={handleLeaveGame}>
+         <button className="leave-game-button" onClick={handleLeaveGame}>
             Leave Game
           </button>
-          
-          {isHost && (
-            <button 
-              className="start-button" 
-              onClick={handleStartGame}
-              disabled={game.participants.length < 2}
-            >
-              {game.participants.length < 2 ? 'Need More Players' : 'Start Game'}
-            </button>
-          )}
-        </div>
       </div>
     </div>
   );
