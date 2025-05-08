@@ -15,7 +15,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
       }
 
       if (!isAuthenticated) {
-        return <Navigate to="/login" state={{ from: location.pathname }} />;
+        const redirectPath = location.search ? `${location.pathname}${location.search}` : location.pathname;
+        return <Navigate to="/login" state={{ from: redirectPath }} />;
       }
     
       return <>{children}</>;

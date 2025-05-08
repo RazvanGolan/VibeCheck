@@ -29,5 +29,12 @@ namespace VibeCheck.DAL.Repositories
                 .Include(g => g.Participants)
                 .FirstOrDefaultAsync(g => g.Code == code);
         }
+
+        public async Task<Game?> GetByUserIdAsync(Guid userId)
+        {
+            return await _context.Games
+                .Include(g => g.Participants)
+                .FirstOrDefaultAsync(g => g.Participants.Any(p => p.UserId == userId));
+        }
     }
 }

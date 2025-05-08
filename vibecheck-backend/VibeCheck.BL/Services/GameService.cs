@@ -122,6 +122,18 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(game);
         }
 
+        public async Task<string?> RemoveUserFromGameAsync(Guid userId)
+        {
+            var game = await _gameRepository.GetByUserIdAsync(userId);
+            
+            if (game is null)
+                return null;
+
+            _ = await LeaveGameAsync(game.GameId, userId);
+
+            return game.Code;
+        }
+
         #region Private Methods
 
         private string GenerateUniqueCode()
