@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './CreateGame.css';
-import { GameMode, GameSettings, defaultGameSettings, PrivacyType } from '../../types/gameSettings';
+import { GameMode, defaultGameSettings, PrivacyType } from '../../types/gameSettings';
 import { useAuth } from '../../context/AuthProvider';
 
-interface LocationState {
-  username?: string;
-}
-
 const CreateRoom = () => {
-  const location = useLocation();
-  const state = location.state as LocationState;
   const navigate = useNavigate();
   const { user } = useAuth();
   

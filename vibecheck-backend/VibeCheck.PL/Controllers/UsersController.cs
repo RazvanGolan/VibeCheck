@@ -56,6 +56,13 @@ namespace VibeCheck.PL.Controllers
             var response = await _authService.LoginAsync(loginDto);
             return Ok(response);
         }
+        
+        [HttpPost("Logout")]
+        public async Task<IActionResult> Logout([FromBody] Guid userId)
+        {
+            var gameCode = await _authService.LogoutAsync(userId);
+            return Ok(gameCode);
+        }
 
         [Authorize]
         [HttpPut("UpdateUser/{id}")]

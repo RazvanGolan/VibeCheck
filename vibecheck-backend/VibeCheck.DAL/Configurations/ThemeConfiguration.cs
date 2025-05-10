@@ -13,10 +13,13 @@ namespace VibeCheck.DAL.Configurations
             builder.HasKey(t => t.ThemeId);
              
             builder.Property(t => t.Name).IsRequired().HasMaxLength(100);
-
-            builder.HasIndex(t => t.Name).IsUnique(); // unique constraint
+            builder.HasIndex(t => t.Name)
+                .IsUnique();
 
             builder.Property(t => t.Category).IsRequired().HasMaxLength(100);
+
+            builder.Property(t => t.CreatedAt)
+                .IsRequired();
 
         }
     }

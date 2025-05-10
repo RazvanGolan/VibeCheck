@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { Vote } from '../../types/vote';
-import { useSignalR } from '../../context/SignalRProvider';
 import './VotingPage.css';
 
 // Mock data for static display
@@ -74,7 +73,6 @@ const VotingPage = () => {
   // Mock SignalR data - this would come from your SignalR connection
   const roundNumber = 1;
   const theme = "Road Trip Vibes";
-  const signalR = useSignalR();
 
   useEffect(() => {
     // Sort votes by count (descending)
@@ -84,7 +82,7 @@ const VotingPage = () => {
     // Check if user has already voted
     const hasVoted = sortedVotes.some(vote => vote.hasUserVoted);
     setUserHasVoted(hasVoted);
-  }, []);
+  }, [votes]);
 
   useEffect(() => {
     audioRef.current = new Audio();

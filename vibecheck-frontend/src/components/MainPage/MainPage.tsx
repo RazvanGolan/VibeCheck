@@ -3,7 +3,6 @@ import './MainPage.css';
 import { useAuth } from '../../context/AuthProvider';
 import { LiveGame } from '../../types/gameTypes';
 import { useNavigate} from 'react-router-dom';
-import { json } from 'stream/consumers';
 
 function MainPage() {
     const { isAuthenticated, user } = useAuth();

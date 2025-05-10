@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Games;
+using VibeCheck.DAL.Dtos.Songs;
+using VibeCheck.DAL.Dtos.Votes;
 
 namespace VibeCheck.PL.Controllers
 {
@@ -152,5 +156,93 @@ namespace VibeCheck.PL.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [Authorize]
+        [HttpPost("RemovePlayer/{gameId}/{playerToRemoveId}")]
+        public async Task<IActionResult> RemovePlayerFromGame(Guid gameId, Guid playerToRemoveId)
+        {
+            try
+            {
+                // Get the current user ID from the JWT token
+                var hostUserId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                var result = await _gameService.RemovePlayerFromGameAsync(gameId, hostUserId, playerToRemoveId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        /////////////////////////////////////////////////////////
+        ///
+        [HttpPost("SubmitSong")]
+        public async Task<IActionResult> SubmitSong([FromBody] SubmitSongDto songDto)
+        {
+            try
+            {
+                var result = await _gameService.SubmitSongAsync(songDto);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("Vote")]
+        public async Task<IActionResult> Vote([FromBody] CreateVoteDto voteDto)
+        {
+            try
+            {
+                var result = await _gameService.VoteForSongAsync(voteDto);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("GetLeaderboard/{gameId}")]
+        public async Task<IActionResult> GetLeaderboard(Guid gameId)
+        {
+            try
+            {
+                var result = await _gameService.GetLeaderboardAndAdvanceRoundAsync(gameId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

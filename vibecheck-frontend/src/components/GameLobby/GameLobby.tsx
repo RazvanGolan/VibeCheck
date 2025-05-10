@@ -1,40 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import { useSignalR } from '../../context/SignalRProvider';
 import './GameLobby.css';
-import { User, UserDto } from '../../types/user';
-
-type GameDetails = {
-  gameId: string;
-  code: string;
-  hostUserId: string;
-  rounds: number;
-  // totalRounds: number;
-  timePerRound: number;
-  playersLimit: number;
-  gameMode: string;
-  status: string;
-  participants: UserDto[];
-  // Define the currentRound property that might be causing the issue
-  // rounds?: {
-  //   roundId: string;
-  //   roundNumber: number;
-  //   status: number;
-  //   startTime: string;
-  //   endTime: string;
-  //   theme: {
-  //     id: string;
-  //     name: string;
-  //   };
-  //   songs: any[];
-  // };
-};
+import { UserDto } from '../../types/user';
+import { GameDetails } from '../../types/gameTypes';
+import QRCode from 'react-qr-code';
 
 const GameLobby: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const signalR = useSignalR();
   
   const [game, setGame] = useState<GameDetails | null>(null);
@@ -44,8 +21,30 @@ const GameLobby: React.FC = () => {
   const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
   const [initialSetupComplete, setInitialSetupComplete] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedInviteLink, setCopiedInviteLink] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(true);
+  const [pendingGameJoin, setPendingGameJoin] = useState<string | null>(null);
+  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+  const CURRENT_URL = window.location.origin;
+
+  // Check if the current user is a participant in the game
+  const checkAuthorization = useCallback((gameData: GameDetails | null) => {
+    if (!gameData || !user) return true;
+    
+    if (pendingGameJoin)
+      return true;
+
+    const isParticipant = gameData.participants.some(participant => participant.userId === user.id);
+    
+    if (!isParticipant) {
+      setIsAuthorized(false);
+      return false;
+    }
+    
+    return true;
+  }, [user, pendingGameJoin]);
 
   const fetchGameDetails = useCallback(async () => {
     if (!gameId) return;
@@ -64,12 +63,14 @@ const GameLobby: React.FC = () => {
         setIsHost(gameData.hostUserId === user.id);
       }
       
+      checkAuthorization(gameData);
+      
       return gameData;
     } catch (err) {
       setError('Failed to load game data. Please try again.');
       return null;
     }
-  }, [gameId, user, API_BASE_URL]);
+  }, [gameId, user, API_BASE_URL, checkAuthorization]);
 
   const setupSignalRHandlers = useCallback(() => {
     if (!signalR.connection || !signalR.isConnected) {
@@ -137,7 +138,8 @@ const GameLobby: React.FC = () => {
         if (!gameData) {
           return;
         }
-                
+
+        checkAuthorization(gameData);
         setupSignalRHandlers();
         
         if (signalR.isConnected && gameData.code && !hasJoinedGroup) {
@@ -162,9 +164,12 @@ const GameLobby: React.FC = () => {
     user, 
     fetchGameDetails, 
     signalR.isConnected,
+    signalR,
     hasJoinedGroup, 
     setupSignalRHandlers, 
-    initialSetupComplete
+    initialSetupComplete,
+    checkAuthorization,
+    navigate
   ]);
 
   useEffect(() => {
@@ -254,8 +259,84 @@ const GameLobby: React.FC = () => {
     }
   };
 
+  const handleCopyInviteLink = () => {
+    if (game?.code) {
+      const inviteLink = `${CURRENT_URL}/lobby/${gameId}?invite=${game.code}`;
+      navigator.clipboard.writeText(inviteLink).then(() => {
+        setCopiedInviteLink(true);
+        setTimeout(() => setCopiedInviteLink(false), 1500);
+      }).catch(err => {
+        console.error('Failed to copy invite link: ', err);
+      });
+    }
+  };
+
+  const toggleQRCodeModal = () => {
+    setShowQRCodeModal(prev => !prev);
+  };
+
+  // Handle authentication and join game process
+  useEffect(() => {
+    const joinGameWithToken = async () => {
+      if (pendingGameJoin && user && isAuthenticated) {
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/Game/JoinGame/${pendingGameJoin}/${user.id}`,
+            { method: 'POST' }
+          );
+          
+          if (response.ok) {
+            const gameData = await response.json();
+            navigate(`/lobby/${gameData.gameId}`, { replace: true });
+          } else {
+            setError('Failed to join game. The invite might be invalid or expired.');
+          }
+        } catch (err) {
+          setError('An error occurred while joining the game.');
+        }
+      }
+    };
+    
+    if (!isAuthenticated && pendingGameJoin) {
+      navigate('/login', { 
+        state: { 
+          from: `/lobby/${gameId}?invite=${pendingGameJoin}` 
+        } 
+      });
+      return;
+    }
+
+    joinGameWithToken();
+  }, [pendingGameJoin, user, isAuthenticated, API_BASE_URL, gameId, navigate]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const inviteToken = searchParams.get('invite');
+    
+    if (inviteToken) {
+      setPendingGameJoin(inviteToken);
+    }
+
+    if (!isAuthorized && !pendingGameJoin) {
+      const redirectTimer = setTimeout(() => {
+        navigate('/');
+      }, 3500);
+      
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isAuthorized, location.search, navigate, pendingGameJoin]);
+
   if (isLoading) {
     return <div className="loading">Loading game lobby...</div>;
+  }
+
+  if (!isAuthorized && !pendingGameJoin) {
+    return (
+      <div>
+        <div style={{fontSize: "30px", color: "red", fontFamily:"cursive", fontWeight:"500"}}>You are not authorized to access this game. Leave now or you shall regret it.</div>
+        <img src="https://media1.tenor.com/m/Rv-IfOOXPSIAAAAC/you-shall-not-pass-lotr.gif" alt="Gandalf - You Shall Not Pass" style={{marginTop: "60px", width: "100%", textAlign: "center"}}/>
+      </div>
+    );
   }
 
   if (error || !game) {
@@ -288,6 +369,37 @@ const GameLobby: React.FC = () => {
             <span className="info-value">{game.participants.length}/{game.playersLimit} joined</span>
           </div>
         </div>
+
+        <div className="invite-link-container">
+            <div className="invite-link-wrapper">
+              <button className="copy-invite-link-button" onClick={handleCopyInviteLink}>
+                {copiedInviteLink ? 'Copied!' : 'Copy Invite Link'}
+              </button>
+              <button className="qr-code-button" onClick={toggleQRCodeModal}>
+                Show QR Code
+              </button>
+            </div>
+          </div>
+
+          {showQRCodeModal && (
+            <div className="qr-code-modal-overlay" onClick={toggleQRCodeModal}>
+              <div className="qr-code-modal" onClick={e => e.stopPropagation()}>
+                <h3>Scan QR Code to Join</h3>
+                <div className="qr-code-container">
+                  {game?.code && (
+                    <QRCode
+                      value={`${CURRENT_URL}/lobby/${gameId}?invite=${game.code}`}
+                      size={200}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="H"
+                    />
+                  )}
+                </div>
+                <button className="close-qr-button" onClick={toggleQRCodeModal}>Close</button>
+              </div>
+            </div>
+          )}
 
         <div className="settings-grid">
           <div className="setting-box">
@@ -335,7 +447,6 @@ const GameLobby: React.FC = () => {
          <button className="leave-game-button" onClick={handleLeaveGame}>
             Leave Game
           </button>
-
       </div>
     </div>
   );

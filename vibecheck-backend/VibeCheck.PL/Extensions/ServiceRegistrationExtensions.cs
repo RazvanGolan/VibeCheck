@@ -15,7 +15,9 @@ public static class ServiceRegistrationExtensions
 {
     public static IServiceCollection AddDatabaseConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("VibeCheckContext");
+        // Try to get connection string from environment variable first (for deployed state), then fall back to configuration (for local development) 
+        var connectionString = Environment.GetEnvironmentVariable("POSTGRESQLCONNSTR_VibeCheckContext") ?? configuration.GetConnectionString("VibeCheckContext");
+        
         services.AddDbContext<VibeCheckContext>(options => options.UseNpgsql(connectionString));
         
         return services;
@@ -39,8 +41,14 @@ public static class ServiceRegistrationExtensions
     
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddTransient<IRepository<User>, BaseRepository<User>>();
-        
+        services.AddScoped<IRepository<User>, BaseRepository<User>>();
+        services.AddScoped<IRepository<Theme>, BaseRepository<Theme>>();
+        services.AddScoped<IRepository<Round>, BaseRepository<Round>>();
+        services.AddScoped<IRepository<Song>, BaseRepository<Song>>();
+        services.AddScoped<IRepository<Vote>, BaseRepository<Vote>>();
+        services.AddScoped<IRepository<PlayerScore>, BaseRepository<PlayerScore>>();
+        services.AddScoped<IGameRepository, GameRepository>();
+
         return services;
     }
     

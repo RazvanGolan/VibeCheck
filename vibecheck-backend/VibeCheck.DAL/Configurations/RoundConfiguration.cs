@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using VibeCheck.DAL.Entities;
+using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.DAL.Configurations
 {
@@ -15,7 +16,8 @@ namespace VibeCheck.DAL.Configurations
             builder.Property(r => r.RoundNumber).IsRequired();
 
             builder.Property(r => r.Status)
-                .HasDefaultValue(0);
+                .HasConversion<string>()
+                .HasDefaultValue(RoundStatus.Submitting);
 
             // relationship with Game
             builder.HasOne(r => r.Game)
