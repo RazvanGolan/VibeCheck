@@ -4,12 +4,11 @@ namespace VibeCheck.DAL.Entities
 {
     public class Song
     {
-        public Guid SongId { get; set; }
+        public string SongId { get; set; } = string.Empty; // Deezer song ID
         public Guid RoundId { get; set; } 
         public Guid UserId { get; set; } 
         public string SongTitle { get; set; } = string.Empty;
         public string Artist { get; set; } = string.Empty; 
-        public string SpotifyUri { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
 
         // New properties from frontend
@@ -17,6 +16,8 @@ namespace VibeCheck.DAL.Entities
         public string? AlbumCoverSmall { get; set; }
         public string? AlbumCoverBig { get; set; }
         public string? PreviewUrl { get; set; }
+
+        public string UserName { get; set; } = string.Empty;
 
         // Navigation properties
         public Round Round { get; set; } = null!;

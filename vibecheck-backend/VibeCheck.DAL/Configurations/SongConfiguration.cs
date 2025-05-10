@@ -20,8 +20,9 @@ namespace VibeCheck.DAL.Configurations
                 .IsRequired()
                 .HasMaxLength(200);
 
-            builder.Property(s => s.SpotifyUri)
-                .IsRequired();
+            builder.Property(s => s.UserName)
+                .IsRequired()
+                .HasMaxLength(50);
 
             builder.Property(s => s.SubmittedAt)
                 .IsRequired();

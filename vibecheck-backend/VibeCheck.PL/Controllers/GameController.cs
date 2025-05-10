@@ -202,10 +202,6 @@ namespace VibeCheck.PL.Controllers
             {
                 return NotFound(ex.Message);
             }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
@@ -213,7 +209,7 @@ namespace VibeCheck.PL.Controllers
         }
 
         [HttpPost("Vote")]
-        public async Task<IActionResult> Vote([FromBody] VoteDto voteDto)
+        public async Task<IActionResult> Vote([FromBody] CreateVoteDto voteDto)
         {
             try
             {
@@ -223,10 +219,6 @@ namespace VibeCheck.PL.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {

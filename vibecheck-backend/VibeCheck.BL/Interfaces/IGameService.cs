@@ -28,7 +28,7 @@ namespace VibeCheck.BL.Interfaces
 
 
         Task<SongDto> SubmitSongAsync(SubmitSongDto songDto);
-        Task<bool> VoteForSongAsync(VoteDto voteDto);
+        Task<bool> VoteForSongAsync(CreateVoteDto voteDto);
         Task<LeaderboardResultDto> GetLeaderboardAndAdvanceRoundAsync(Guid gameId);
         Task<string?> RemoveUserFromGameAsync(Guid userId);
     }

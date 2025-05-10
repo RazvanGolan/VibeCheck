@@ -18,9 +18,6 @@ namespace VibeCheck.DAL.Configurations
 
             builder.Property(t => t.Category).IsRequired().HasMaxLength(100);
 
-            // Add new property
-            builder.Property(t => t.Description);
-
             builder.Property(t => t.CreatedAt)
                 .IsRequired();
 

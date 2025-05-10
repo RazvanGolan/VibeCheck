@@ -32,18 +32,17 @@ namespace VibeCheck.DAL.Repositories
 
         public async Task<Game?> GetByIdWithDetailsAsync(Guid id)
         {
-            return await _context.Set<Game>()
+            return await _context.Games
                 .Include(g => g.Participants)
                 .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Votes)
+                        .ThenInclude(v => v.VoterUser) 
+                .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Theme)
-                .Include(g => g.RoundsList)
-                    .ThenInclude(r => r.Songs)
-                        .ThenInclude(s => s.User)
-                .Include(g => g.RoundsList)
-                    .ThenInclude(r => r.Songs)
-                        .ThenInclude(s => s.Votes)
                 .FirstOrDefaultAsync(g => g.GameId == id);
-        } 
+        }
         public async Task<Game?> GetByUserIdAsync(Guid userId)
         {
             return await _context.Games

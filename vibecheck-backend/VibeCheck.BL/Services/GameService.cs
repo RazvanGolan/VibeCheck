@@ -57,32 +57,36 @@ namespace VibeCheck.BL.Services
             game.CurrentRound = 1; // Set initial round to 1
             game.RoundsList = new List<Round>(); // Initialize rounds list
 
-            // Get theme for first round (random or from custom themes)
-            Theme theme;
-            if (game.CustomThemes.Any())
+            // Create all rounds upfront with themes
+            for (int i = 1; i <= game.TotalRounds; i++)
             {
-                // Use first custom theme
-                theme = await GetOrCreateThemeAsync(game.CustomThemes.First());
-            }
-            else
-            {
-                // Use random theme
-                theme = await GetRandomThemeAsync(game.SelectedThemeCategories);
-            }
+                // Determine theme for the round
+                Theme theme;
+                if (game.CustomThemes.Count >= i)
+                {
+                    // Use custom theme if available for this round
+                    var customThemeName = game.CustomThemes[i - 1];
+                    theme = await GetOrCreateThemeAsync(customThemeName);
+                }
+                else
+                {
+                    // Otherwise use random theme
+                    theme = await GetRandomThemeAsync(game.SelectedThemeCategories);
+                }
 
-            // Create first round
-            var firstRound = new Round
-            {
-                RoundId = Guid.NewGuid(),
-                GameId = game.GameId,
-                ThemeId = theme.ThemeId,
-                RoundNumber = 1,
-                Status = RoundStatus.Submitting,
-                StartTime = DateTime.UtcNow,
-                EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound)
-            };
+                var round = new Round
+                {
+                    RoundId = Guid.NewGuid(),
+                    GameId = game.GameId,
+                    ThemeId = theme.ThemeId,
+                    RoundNumber = i,
+                    Status = i == 1 ? RoundStatus.Submitting : RoundStatus.Submitting, // Set first round to submitting and others to submitting too, maybe we'll add a waiting status later
+                    StartTime = i == 1 ? DateTime.UtcNow : DateTime.MaxValue, // Only set start time for first round
+                    EndTime = i == 1 ? DateTime.UtcNow.AddSeconds(game.TimePerRound) : DateTime.MaxValue
+                };
 
-            game.RoundsList.Add(firstRound);
+                game.RoundsList.Add(round);
+            }
 
             var createdGame = await _gameRepository.AddAsync(game);
             var gameDto = _mapper.Map<GameDto>(createdGame);
@@ -90,7 +94,8 @@ namespace VibeCheck.BL.Services
             // Include first round theme in the response
             if (gameDto.Rounds.Any())
             {
-                gameDto.Rounds.First().Theme = _mapper.Map<ThemeDto>(theme);
+                var firstRoundTheme = await _themeRepository.GetByIdAsync(game.RoundsList.First().ThemeId);
+                gameDto.Rounds.First().Theme = _mapper.Map<ThemeDto>(firstRoundTheme);
             }
 
             return gameDto;
@@ -217,35 +222,33 @@ namespace VibeCheck.BL.Services
             var game = await _gameRepository.GetByIdWithDetailsAsync(songDto.GameId)
                 ?? throw new KeyNotFoundException($"Game with id {songDto.GameId} not found");
 
-            // Get current round
+            // Get current round - use data from game entity
             var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound)
                 ?? throw new KeyNotFoundException("Current round not found");
 
-            // Check if user already submitted a song for this round
-            var existingSongs = await _songRepository.GetAllAsync();
-            var existingSong = existingSongs.FirstOrDefault(s =>
-                s.RoundId == currentRound.RoundId && s.UserId == songDto.UserId);
-
+            // Check if user already submitted a song for this round - use data from game entity
+            var existingSong = currentRound.Songs.FirstOrDefault(s => s.UserId == songDto.UserId);
             if (existingSong != null)
             {
                 throw new InvalidOperationException("You have already submitted a song for this round");
             }
 
             // Check if user is part of the game
-            if (!game.Participants.Any(p => p.UserId == songDto.UserId))
+            var userInGame = game.Participants.FirstOrDefault(p => p.UserId == songDto.UserId);
+            if (userInGame == null)
             {
                 throw new InvalidOperationException("User is not a participant in this game");
             }
 
-            // Create new song
+            // Create new song with the provided Deezer ID
             var song = new Song
             {
-                SongId = Guid.NewGuid(),
+                SongId = songDto.SongId, // Use Deezer ID directly
                 RoundId = currentRound.RoundId,
                 UserId = songDto.UserId,
+                UserName = userInGame.Username, // Store username directly in song entity
                 SongTitle = songDto.Title,
                 Artist = songDto.Artist,
-                SpotifyUri = songDto.SpotifyUri,
                 AlbumName = songDto.AlbumName,
                 AlbumCoverSmall = songDto.AlbumCoverSmall,
                 AlbumCoverBig = songDto.AlbumCoverBig,
@@ -255,46 +258,40 @@ namespace VibeCheck.BL.Services
 
             await _songRepository.AddAsync(song);
 
-            // Get user info for response
-            var user = await _userRepository.GetByIdAsync(songDto.UserId);
-
             var songResponse = _mapper.Map<SongDto>(song);
-            songResponse.UserName = user?.Username ?? "Unknown User";
             songResponse.VoteCount = 0;
+            songResponse.Votes = new List<VoteDto>(); // Initialize empty votes list
 
             return songResponse;
         }
 
         // Vote for song implementation
-        public async Task<bool> VoteForSongAsync(VoteDto voteDto)
+        public async Task<bool> VoteForSongAsync(CreateVoteDto voteDto)
         {
-            // Get the game
+            // Get the game with all details
             var game = await _gameRepository.GetByIdWithDetailsAsync(voteDto.GameId)
                 ?? throw new KeyNotFoundException($"Game with id {voteDto.GameId} not found");
 
-            // Get current round
+            // Get current round from game entity
             var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound)
                 ?? throw new KeyNotFoundException("Current round not found");
 
-            // Check if song exists and belongs to current round
-            var song = await _songRepository.GetByIdAsync(voteDto.SongId);
-
-            if (song == null || song.RoundId != currentRound.RoundId)
+            // Check if song exists and belongs to current round - from already loaded data
+            var song = currentRound.Songs.FirstOrDefault(s => s.SongId == voteDto.SongId);
+            if (song == null)
             {
                 throw new KeyNotFoundException("Song not found in current round");
             }
 
-            // Check if user is part of the game
-            if (!game.Participants.Any(p => p.UserId == voteDto.VoterUserId))
+            // Check if user is part of the game - from already loaded data
+            var voter = game.Participants.FirstOrDefault(p => p.UserId == voteDto.VoterUserId);
+            if (voter == null)
             {
                 throw new InvalidOperationException("User is not a participant in this game");
             }
 
-            // Check if user already voted in this round
-            var votes = await _voteRepository.GetAllAsync();
-            var existingVote = votes.FirstOrDefault(v =>
-                v.RoundId == currentRound.RoundId && v.VoterUserId == voteDto.VoterUserId);
-
+            // Check if user already voted in this round - from already loaded data
+            var existingVote = currentRound.Votes.FirstOrDefault(v => v.VoterUserId == voteDto.VoterUserId);
             if (existingVote != null)
             {
                 throw new InvalidOperationException("You have already voted in this round");
@@ -313,6 +310,7 @@ namespace VibeCheck.BL.Services
                 RoundId = currentRound.RoundId,
                 SongId = voteDto.SongId,
                 VoterUserId = voteDto.VoterUserId,
+                VoterUser = voter,
                 VotedAt = DateTime.UtcNow
             };
 
@@ -331,16 +329,15 @@ namespace VibeCheck.BL.Services
             var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound)
                 ?? throw new KeyNotFoundException("Current round not found");
 
-            // Get all songs for the current round with their votes
-            var songs = (await _songRepository.GetAllAsync())
-                .Where(s => s.RoundId == currentRound.RoundId);
+            // Get all songs for the current round with their votes - use data from game entity
+            var songs = currentRound.Songs;
 
             var songsWithVotes = new List<(Song Song, int VoteCount)>();
             var allVotes = await _voteRepository.GetAllAsync();
 
             foreach (var song in songs)
             {
-                var voteCount = allVotes.Count(v => v.SongId == song.SongId);
+                var voteCount = currentRound.Votes.Count(v => v.SongId == song.SongId);
                 songsWithVotes.Add((song, voteCount));
             }
 
@@ -553,7 +550,7 @@ namespace VibeCheck.BL.Services
                     ThemeId = Guid.NewGuid(),
                     Name = themeName,
                     Category = "Custom",
-                    Description = "Custom theme",
+                    // Remove Description
                     CreatedAt = DateTime.UtcNow
                 };
 
