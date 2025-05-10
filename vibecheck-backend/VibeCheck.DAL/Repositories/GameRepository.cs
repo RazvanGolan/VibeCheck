@@ -35,6 +35,8 @@ namespace VibeCheck.DAL.Repositories
             return await _context.Games
                 .Include(g => g.Participants)
                 .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Theme)
+                .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Songs)
                 .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Votes)

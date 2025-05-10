@@ -14,7 +14,7 @@ namespace VibeCheck.BL.Mapper
     {
         public GameProfile()
         {
-            CreateMap<Game, GameDto>()
+            _ = CreateMap<Game, GameDto>()
                 .ForMember(dest => dest.TotalRounds, opt => opt.MapFrom(src => src.TotalRounds))
                 .ForMember(dest => dest.Rounds, opt => opt.MapFrom(src =>
                     src.RoundsList.OrderBy(r => r.RoundNumber)
@@ -25,6 +25,13 @@ namespace VibeCheck.BL.Mapper
                         Status = r.Status,
                         StartTime = r.StartTime,
                         EndTime = r.EndTime,
+                        Theme = r.Theme != null ? new ThemeDto
+                        {
+                            ThemeId = r.Theme.ThemeId,
+                            Name = r.Theme.Name != null ? r.Theme.Name : "Unknown Theme",
+                            Category = r.Theme.Category != null ? r.Theme.Category : "Unknown Theme"
+
+                        } : null,
                         Songs = r.Songs != null ? r.Songs.Select(s => new SongDto
                         {
                             SongId = s.SongId,
