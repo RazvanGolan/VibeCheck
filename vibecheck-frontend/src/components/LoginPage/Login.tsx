@@ -84,7 +84,7 @@ const Login = () => {
                 {loading ? 'Logging in...' : 'Submit'}
               </button>
             </div>
-            <button className="back-button" type="button" onClick={handleBack}>
+            <button className="login-back-button" type="button" onClick={handleBack}>
               ← Back
             </button>
           </form>
