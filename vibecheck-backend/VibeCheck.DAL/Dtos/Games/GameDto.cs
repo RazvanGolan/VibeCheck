@@ -1,4 +1,5 @@
-﻿using VibeCheck.DAL.Dtos.Users;
+﻿using VibeCheck.DAL.Dtos.Rounds;
+using VibeCheck.DAL.Dtos.Users;
 using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.DAL.Dtos.Games
@@ -12,7 +13,8 @@ namespace VibeCheck.DAL.Dtos.Games
         public DateTime CreatedAt { get; set; }
 
         // New properties
-        public int Rounds { get; set; }
+        public int CurrentRound { get; set; } = 1;
+        public int TotalRounds { get; set; }
         public int PlayersLimit { get; set; }
         public int TimePerRound { get; set; }
         public PrivacyType Privacy { get; set; }
@@ -21,5 +23,7 @@ namespace VibeCheck.DAL.Dtos.Games
         public List<string> CustomThemes { get; set; } = new();
 
         public List<UserDto> Participants { get; set; } = new();
+
+        public List<RoundDto> Rounds { get; set; } = new List<RoundDto>();
     }
 }

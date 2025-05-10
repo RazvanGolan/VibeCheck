@@ -12,6 +12,12 @@ namespace VibeCheck.DAL.Configurations
 
             builder.HasKey(v => v.VoteId);
 
+            builder.Property(v => v.SongId)
+                .IsRequired();
+
+            builder.Property(v => v.VotedAt)
+                .IsRequired();
+
             // Prevent duplicate votes in same round
             builder.HasIndex(v => new { v.RoundId, v.VoterUserId })
                 .IsUnique();

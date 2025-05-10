@@ -1,4 +1,7 @@
 ﻿using VibeCheck.DAL.Dtos.Games;
+using VibeCheck.DAL.Dtos.Leaderboard;
+using VibeCheck.DAL.Dtos.Songs;
+using VibeCheck.DAL.Dtos.Votes;
 
 namespace VibeCheck.BL.Interfaces
 {
@@ -19,6 +22,14 @@ namespace VibeCheck.BL.Interfaces
         Task<GameDto> JoinGameAsync(string gameCode, Guid userId);
 
         Task<GameDto> LeaveGameAsync(Guid gameId, Guid userId);
+
+        Task<GameDto> RemovePlayerFromGameAsync(Guid gameId, Guid hostUserId, Guid playerToRemoveId);
+
+
+
+        Task<SongDto> SubmitSongAsync(SubmitSongDto songDto);
+        Task<bool> VoteForSongAsync(CreateVoteDto voteDto);
+        Task<LeaderboardResultDto> GetLeaderboardAndAdvanceRoundAsync(Guid gameId);
         Task<string?> RemoveUserFromGameAsync(Guid userId);
     }
 }

@@ -41,8 +41,14 @@ public static class ServiceRegistrationExtensions
     
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddTransient<IRepository<User>, BaseRepository<User>>();
-        
+        services.AddScoped<IRepository<User>, BaseRepository<User>>();
+        services.AddScoped<IRepository<Theme>, BaseRepository<Theme>>();
+        services.AddScoped<IRepository<Round>, BaseRepository<Round>>();
+        services.AddScoped<IRepository<Song>, BaseRepository<Song>>();
+        services.AddScoped<IRepository<Vote>, BaseRepository<Vote>>();
+        services.AddScoped<IRepository<PlayerScore>, BaseRepository<PlayerScore>>();
+        services.AddScoped<IGameRepository, GameRepository>();
+
         return services;
     }
     

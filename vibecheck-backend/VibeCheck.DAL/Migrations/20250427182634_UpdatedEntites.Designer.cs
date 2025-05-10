@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using VibeCheck.DAL;
@@ -11,9 +12,11 @@ using VibeCheck.DAL;
 namespace VibeCheck.DAL.Migrations
 {
     [DbContext(typeof(VibeCheckContext))]
-    partial class VibeCheckContextModelSnapshot : ModelSnapshot
+    [Migration("20250427182634_UpdatedEntites")]
+    partial class UpdatedEntites
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,8 +166,9 @@ namespace VibeCheck.DAL.Migrations
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Song", b =>
                 {
-                    b.Property<string>("SongId")
-                        .HasColumnType("text");
+                    b.Property<Guid>("SongId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AlbumCoverBig")
                         .HasColumnType("text");
@@ -191,16 +195,15 @@ namespace VibeCheck.DAL.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<string>("SpotifyUri")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.HasKey("SongId");
 
@@ -224,6 +227,9 @@ namespace VibeCheck.DAL.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -266,9 +272,8 @@ namespace VibeCheck.DAL.Migrations
                     b.Property<Guid>("RoundId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SongId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("SongId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("VotedAt")
                         .HasColumnType("timestamp with time zone");

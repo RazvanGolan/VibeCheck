@@ -3,6 +3,7 @@ namespace VibeCheck.DAL.Entities
 {
     public class PlayerScore // for leaderboard
     {
+        public Guid PlayerScoreId { get; set; }
         public Guid GameId { get; set; }
         public Guid UserId { get; set; }
         public int TotalScore { get; set; }

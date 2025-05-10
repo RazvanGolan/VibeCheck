@@ -14,7 +14,9 @@ namespace VibeCheck.DAL.Entities
 
         public DateTime CreatedAt { get; set; }
 
-        public int Rounds { get; set; }
+        public int TotalRounds { get; set; }
+
+        public int CurrentRound { get; set; } = 1; 
         public int PlayersLimit { get; set; }
         public int TimePerRound { get; set; }
         public PrivacyType Privacy { get; set; }
