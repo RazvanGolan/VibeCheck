@@ -41,16 +41,8 @@ public class GameHub : Hub
     
     public async Task StartGame(string gameCode)
     {
-        var game = await _gameService.GetGameByCodeAsync(gameCode);
-        
-        // Update the game status to active if needed
-        if (game.Status is not GameStatus.Active)
-        {
-            game.Status = GameStatus.Active;
-            await _gameService.UpdateGameStatusAsync(game.GameId, GameStatus.Active);
-        }
-        
-        await Clients.Group(gameCode).SendAsync("GameStarted", game);
+        var updatedGame = await _gameService.GetGameByCodeAsync(gameCode);
+        await Clients.Group(gameCode).SendAsync("GameStarted", updatedGame);
     }
     
     public async Task EndGame(string gameCode)
@@ -69,5 +61,43 @@ public class GameHub : Hub
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
         await Clients.Group(gameCode).SendAsync("SongVoted", game, song, userId);
+    }
+    
+    // Synchronize round timing across all clients
+    public async Task SyncRoundTime(string gameId)
+    {
+        var game = await _gameService.GetGameByIdAsync(Guid.Parse(gameId));
+        var currentRound = game.Rounds.FirstOrDefault(r => r.RoundNumber == game.CurrentRound);
+
+        if (game.Status is not GameStatus.Active)
+        {
+            await Task.Delay(100);
+        }
+        
+        if (currentRound != null)
+        {
+            var serverTime = DateTime.UtcNow;
+            var roundStartTime = currentRound.StartTime;
+            
+            var selectionPhaseEndTime = roundStartTime.AddSeconds(game.TimePerRound);
+            
+            var roundEndTime = selectionPhaseEndTime.AddSeconds(game.Participants.Count * 20);
+            
+            var totalTimeRemaining = Math.Max(0, (roundEndTime - serverTime).TotalSeconds);
+            var selectionTimeRemaining = Math.Max(0, (selectionPhaseEndTime - serverTime).TotalSeconds);
+            
+            var isInSelectionPhase = serverTime < selectionPhaseEndTime;
+            var phase = isInSelectionPhase ? "selection" : "voting";
+            
+            await Clients.Group(game.Code).SendAsync("RoundTimeSync", 
+                new { 
+                    ServerTime = serverTime,
+                    SelectionPhaseEndTime = selectionPhaseEndTime,
+                    RoundEndTime = roundEndTime,
+                    TotalTimeRemaining = totalTimeRemaining,
+                    SelectionTimeRemaining = selectionTimeRemaining,
+                    CurrentPhase = phase
+                });
+        }
     }
 }

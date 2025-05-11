@@ -9,7 +9,7 @@ import QRCode from 'react-qr-code';
 
 const GameLobby: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const signalR = useSignalR();
@@ -235,6 +235,19 @@ const GameLobby: React.FC = () => {
     // Trigger the StartGame event on the hub to notify all players
     if (signalR.connection && signalR.isConnected && game.code) {
       try {
+
+        const response = await fetch(`${API_BASE_URL}/api/Game/StartGame/${gameId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to start game');
+        }
+
         await signalR.connection.invoke("StartGame", game.code);
         // The navigation will happen in the GameStarted event handler
       } catch (err) {

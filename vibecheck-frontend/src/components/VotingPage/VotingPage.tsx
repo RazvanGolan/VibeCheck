@@ -24,6 +24,15 @@ const VotingPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [userHasVoted, setUserHasVoted] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const endTimeRef = useRef<Date | null>(null);
+
+  // Request time sync as soon as gameId is available
+  useEffect(() => {
+    if (gameId && signalR.isConnected) {
+      signalR.requestRoundTimeSync(gameId);
+    }
+  }, [gameId, signalR.isConnected, signalR]);
 
   // Initialize the audio player
   useEffect(() => {
@@ -105,9 +114,10 @@ const VotingPage = () => {
       signalR.connectToHub();
     }
 
-    if (game?.code) {
+    if (game?.code && gameId) {
       const joinGroup = async () => {
         await signalR.joinGameGroup(game.code);
+        await signalR.requestRoundTimeSync(gameId);
       };
       joinGroup();
     }
@@ -176,6 +186,22 @@ const VotingPage = () => {
         }
       });
 
+      // Listen for time sync updates
+      signalR.onRoundTimeSync((timeInfo) => {
+        if (timeInfo) {
+          const { TotalTimeRemaining, RoundEndTime, CurrentPhase } = timeInfo;
+          
+          if (CurrentPhase === 'voting') {
+            const endTimeDate = new Date(RoundEndTime);
+            endTimeRef.current = endTimeDate;
+            
+            const minutes = Math.floor(TotalTimeRemaining / 60);
+            const seconds = Math.floor(TotalTimeRemaining % 60);
+            setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+          }
+        }
+      });
+
       signalR.connection.on("RoundEnded", () => {
         // Handle round ended (could navigate to results or next round)
       });
@@ -191,34 +217,55 @@ const VotingPage = () => {
         signalR.connection.off("RoundEnded");
       }
     };
-  }, [signalR, game, user?.id]);
+  }, [signalR, game, user?.id, gameId]);
 
-  // Update the timer and handle auto-navigation when time runs out
+  // Update the timer based on endTimeRef
   useEffect(() => {
-    if (!game || !gameId) return;
-    
-    const votingTimeSeconds = game.timePerRound;
-    let timeLeft = votingTimeSeconds;
-    
-    const updateTimeRemaining = () => {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    if (!gameId || !endTimeRef.current) return;
+
+    // Function to update the timer
+    const updateTimer = () => {
+      if (!endTimeRef.current) return;
       
+      const now = new Date();
+      const timeDiff = endTimeRef.current.getTime() - now.getTime();
+      const secondsRemaining = Math.max(0, Math.floor(timeDiff / 1000));
+            
+      const minutes = Math.floor(secondsRemaining / 60);
+      const seconds = secondsRemaining % 60;
       setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
-      
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        // Handle voting ended - could navigate to results or next round
-      }
-      
-      timeLeft -= 1;
     };
+
+    // Request time sync from server when component mounts or game changes
+    if (gameId) {
+      signalR.requestRoundTimeSync(gameId);
+    }
     
-    updateTimeRemaining();
-    const timerInterval = setInterval(updateTimeRemaining, 1000);
+    updateTimer();
+    timerRef.current = setInterval(updateTimer, 1000);
     
-    return () => clearInterval(timerInterval);
-  }, [game, gameId]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [gameId, game?.code, signalR]);
+
+  // Re-sync time every 10 seconds to prevent drift and stay synchronized
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      if (gameId) {
+        signalR.requestRoundTimeSync(gameId);
+      }
+    }, 10000);
+    
+    return () => clearInterval(syncInterval);
+  }, [game?.code, signalR, gameId]);
 
   const handlePlayToggle = (submission: SongSubmission) => {
     if (currentlyPlaying === submission.id) {

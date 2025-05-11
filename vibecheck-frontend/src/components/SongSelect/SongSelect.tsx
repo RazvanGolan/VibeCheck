@@ -54,6 +54,15 @@ const SongSelect = () => {
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const endTimeRef = useRef<Date | null>(null);
+  
+  // Request time sync as soon as gameId is available
+  useEffect(() => {
+    if (gameId && signalR.isConnected) {
+      signalR.requestRoundTimeSync(gameId);
+    }
+  }, [gameId, signalR.isConnected, signalR]);
 
   // Initialize the audio player
   useEffect(() => {
@@ -111,9 +120,10 @@ const SongSelect = () => {
       signalR.connectToHub();
     }
 
-    if (game?.code) {
+    if (game?.code && gameId) {
       const joinGroup = async () => {
         await signalR.joinGameGroup(game.code);
+        await signalR.requestRoundTimeSync(gameId);
       };
       joinGroup();
     }
@@ -128,40 +138,80 @@ const SongSelect = () => {
       }
     });
 
+    // Listen for time sync updates
+    signalR.onRoundTimeSync((timeInfo) => {
+      if (timeInfo) {
+        console.log('Time sync received:', timeInfo);
+        const { selectionTimeRemaining, selectionPhaseEndTime } = timeInfo;
+
+        const endTimeDate = new Date(selectionPhaseEndTime);
+        endTimeRef.current = endTimeDate;
+        
+        const minutes = Math.floor(selectionTimeRemaining / 60);
+        const seconds = Math.floor(selectionTimeRemaining % 60);
+        setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      }
+    });
+
     return () => {
       if (game?.code) {
         signalR.leaveGameGroup(game.code);
       }
     };
-  }, [signalR, game]);
+  }, [signalR, game, gameId]);
 
   // Update the timer and handle auto-navigation when time runs out
   useEffect(() => {
-    if (!game || !gameId) return;
-    
-    // Initialize the timer with timePerRound from game
-    const totalSeconds = game.timePerRound;
-    let timeLeft = totalSeconds;
-    
-    const updateTimeRemaining = () => {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    if (!gameId || !endTimeRef.current) return;
+
+    const updateTimer = () => {
+      if (!endTimeRef.current) return;
       
+      const now = new Date();
+      const timeDiff = endTimeRef.current.getTime() - now.getTime();
+      const secondsRemaining = Math.max(0, Math.floor(timeDiff / 1000));
+            
+      const minutes = Math.floor(secondsRemaining / 60);
+      const seconds = secondsRemaining % 60;
       setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
       
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
+      if (secondsRemaining <= 0) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
         navigate(`/vote/${gameId}`);
       }
-      
-      timeLeft -= 1;
     };
+
+    // Request time sync from server when component mounts or game changes
+    if (gameId) {
+      signalR.requestRoundTimeSync(gameId);
+    }
     
-    updateTimeRemaining();
-    const timerInterval = setInterval(updateTimeRemaining, 1000);
+    updateTimer();
+    timerRef.current = setInterval(updateTimer, 1000);
     
-    return () => clearInterval(timerInterval);
-  }, [game, gameId, navigate]);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [gameId, navigate, game?.code, signalR]);
+
+  // Re-sync time every 10 seconds to prevent drift and ensure phase transitions
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      if (gameId) {
+        signalR.requestRoundTimeSync(gameId);
+      }
+    }, 10000); 
+    
+    return () => clearInterval(syncInterval);
+  }, [gameId, signalR]);
 
   useEffect(() => {
     const fetchSongs = async () => {

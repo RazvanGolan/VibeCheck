@@ -28,11 +28,14 @@ namespace VibeCheck.BL.Interfaces
 
         Task<GameDto> RemovePlayerFromGameAsync(Guid gameId, Guid hostUserId, Guid playerToRemoveId);
 
-
-
         Task<SongDto> SubmitSongAsync(SubmitSongDto songDto);
+        
         Task<bool> VoteForSongAsync(CreateVoteDto voteDto);
+        
         Task<LeaderboardResultDto> GetLeaderboardAndAdvanceRoundAsync(Guid gameId);
+        
         Task<string?> RemoveUserFromGameAsync(Guid userId);
+        
+        Task<GameDto> StartGameAsync(Guid gameId);
     }
 }

@@ -80,9 +80,9 @@ namespace VibeCheck.BL.Services
                     GameId = game.GameId,
                     ThemeId = theme.ThemeId,
                     RoundNumber = i,
-                    Status = i == 1 ? RoundStatus.Submitting : RoundStatus.Submitting, // Set first round to submitting and others to submitting too, maybe we'll add a waiting status later
-                    StartTime = i == 1 ? DateTime.UtcNow : DateTime.MaxValue, // Only set start time for first round
-                    EndTime = i == 1 ? DateTime.UtcNow.AddSeconds(game.TimePerRound) : DateTime.MaxValue
+                    Status = RoundStatus.Submitting, 
+                    StartTime = DateTime.MaxValue,
+                    EndTime = DateTime.MaxValue
                 };
 
                 game.RoundsList.Add(round);
@@ -357,6 +357,30 @@ namespace VibeCheck.BL.Services
             _ = await LeaveGameAsync(game.GameId, userId);
 
             return game.Code;
+        }
+
+        public async Task<GameDto> StartGameAsync(Guid gameId)
+        {
+            // First get the game with all details
+            var game = await _gameRepository.GetByIdWithDetailsAsync(gameId)
+                       ?? throw new KeyNotFoundException($"Game with code {gameId} not found");
+                       
+            // Get the first round independently to ensure it's tracked properly
+            var firstRound = await _roundRepository.GetByIdAsync(
+                game.RoundsList.FirstOrDefault()?.RoundId ?? throw new ArgumentException(nameof(game.RoundsList)));
+            
+            if (firstRound == null)
+                throw new KeyNotFoundException("First round could not be found");
+                
+            // Update directly
+            game.Status = GameStatus.Active;
+            firstRound.StartTime = DateTime.UtcNow;
+            firstRound.EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound + game.Participants.Count * 20);
+            
+            // Update both entities
+            await _gameRepository.UpdateAsync(game);
+            await _roundRepository.UpdateAsync(firstRound);
+            return _mapper.Map<GameDto>(game);
         }
 
         #region Private Methods
