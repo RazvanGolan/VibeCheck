@@ -20,10 +20,6 @@ namespace VibeCheck.DAL.Configurations
                 .IsRequired()
                 .HasMaxLength(200);
 
-            builder.Property(s => s.UserName)
-                .IsRequired()
-                .HasMaxLength(50);
-
             builder.Property(s => s.SubmittedAt)
                 .IsRequired();
 
@@ -38,10 +34,8 @@ namespace VibeCheck.DAL.Configurations
                 .WithMany(r => r.Songs)
                 .HasForeignKey(s => s.RoundId);
 
-            builder.HasOne(s => s.User)
-                .WithMany(u => u.SubmittedSongs)
-                .HasForeignKey(s => s.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+            builder.HasMany(s => s.Users)
+                .WithMany(u => u.SubmittedSongs);
 
             builder.HasMany(s => s.Votes)
                 .WithOne(v => v.Song)

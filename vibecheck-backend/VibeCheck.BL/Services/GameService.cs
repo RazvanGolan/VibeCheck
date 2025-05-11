@@ -239,13 +239,6 @@ namespace VibeCheck.BL.Services
             var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound)
                 ?? throw new KeyNotFoundException("Current round not found");
 
-            // Check if user already submitted a song for this round - use data from game entity
-            var existingSong = currentRound.Songs.FirstOrDefault(s => s.UserId == songDto.UserId);
-            if (existingSong != null)
-            {
-                throw new InvalidOperationException("You have already submitted a song for this round");
-            }
-
             // Check if user is part of the game
             var userInGame = game.Participants.FirstOrDefault(p => p.UserId == songDto.UserId);
             if (userInGame == null)
@@ -253,20 +246,35 @@ namespace VibeCheck.BL.Services
                 throw new InvalidOperationException("User is not a participant in this game");
             }
 
+            // Check if song already exists in the current round
+            var existingSong = currentRound.Songs.FirstOrDefault(s => s.SongId == songDto.SongId);
+            if (existingSong != null)
+            {
+                if (existingSong.Users.Contains(userInGame))
+                {
+                    // User already submitted this song
+                    throw new InvalidOperationException("You have already submitted this song");
+                }
+                
+                existingSong.Users.Add(userInGame); // Add user to the song's list of users
+                await _songRepository.UpdateAsync(existingSong);
+                
+                return _mapper.Map<SongDto>(existingSong);
+            }
+            
             // Create new song with the provided Deezer ID
             var song = new Song
             {
                 SongId = songDto.SongId, // Use Deezer ID directly
                 RoundId = currentRound.RoundId,
-                UserId = songDto.UserId,
-                UserName = userInGame.Username, // Store username directly in song entity
                 SongTitle = songDto.Title,
                 Artist = songDto.Artist,
                 AlbumName = songDto.AlbumName,
                 AlbumCoverSmall = songDto.AlbumCoverSmall,
                 AlbumCoverBig = songDto.AlbumCoverBig,
                 PreviewUrl = songDto.PreviewUrl,
-                SubmittedAt = DateTime.UtcNow
+                SubmittedAt = DateTime.UtcNow,
+                Users = [userInGame]
             };
 
             await _songRepository.AddAsync(song);
@@ -311,7 +319,7 @@ namespace VibeCheck.BL.Services
             }
 
             // Prevent voting for own song
-            if (song.UserId == voteDto.VoterUserId)
+            if (song.Users.Contains(voter))
             {
                 throw new InvalidOperationException("You cannot vote for your own song");
             }
@@ -334,134 +342,7 @@ namespace VibeCheck.BL.Services
         // Get leaderboard and advance round implementation
         public async Task<LeaderboardResultDto> GetLeaderboardAndAdvanceRoundAsync(Guid gameId)
         {
-            // Get game with all details
-            var game = await _gameRepository.GetByIdWithDetailsAsync(gameId)
-                ?? throw new KeyNotFoundException($"Game with id {gameId} not found");
-
-            // Get current round
-            var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound)
-                ?? throw new KeyNotFoundException("Current round not found");
-
-            // Get all songs for the current round with their votes - use data from game entity
-            var songs = currentRound.Songs;
-
-            var songsWithVotes = new List<(Song Song, int VoteCount)>();
-            var allVotes = await _voteRepository.GetAllAsync();
-
-            foreach (var song in songs)
-            {
-                var voteCount = currentRound.Votes.Count(v => v.SongId == song.SongId);
-                songsWithVotes.Add((song, voteCount));
-            }
-
-            // Find winning song
-            var sortedSongs = songsWithVotes.OrderByDescending(s => s.VoteCount).ToList();
-            var winningSong = sortedSongs.FirstOrDefault();
-            SongDto? winningSongDto = null;
-
-            if (winningSong.Song != null && sortedSongs.Any())
-            {
-                var user = await _userRepository.GetByIdAsync(winningSong.Song.UserId);
-                winningSongDto = _mapper.Map<SongDto>(winningSong.Song);
-                winningSongDto.UserName = user?.Username ?? "Unknown User";
-                winningSongDto.VoteCount = winningSong.VoteCount;
-
-                // Update player score
-                var playerScores = await _playerScoreRepository.GetAllAsync();
-                var playerScore = playerScores.FirstOrDefault(ps =>
-                    ps.GameId == gameId && ps.UserId == winningSong.Song.UserId);
-
-                if (playerScore != null)
-                {
-                    playerScore.TotalScore += 1;
-                    await _playerScoreRepository.UpdateAsync(playerScore);
-                }
-                else
-                {
-                    await _playerScoreRepository.AddAsync(new PlayerScore
-                    {
-                        PlayerScoreId = Guid.NewGuid(),
-                        GameId = gameId,
-                        UserId = winningSong.Song.UserId,
-                        TotalScore = 1
-                    });
-                }
-            }
-
-            // Complete current round
-            currentRound.Status = RoundStatus.Completed;
-            await _roundRepository.UpdateAsync(currentRound);
-
-            // Advance to next round if not the last
-            if (game.CurrentRound < game.TotalRounds) // Changed from game.Rounds to game.TotalRounds
-            {
-                game.CurrentRound++;
-
-                // Create next round if it doesn't exist
-                var nextRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound);
-                if (nextRound == null)
-                {
-                    // Determine theme for next round
-                    Theme theme;
-                    if (game.CustomThemes.Count >= game.CurrentRound)
-                    {
-                        // Use custom theme if available for this round
-                        var customThemeName = game.CustomThemes[game.CurrentRound - 1];
-                        theme = await GetOrCreateThemeAsync(customThemeName);
-                    }
-                    else
-                    {
-                        // Otherwise use random theme
-                        theme = await GetRandomThemeAsync(game.SelectedThemeCategories);
-                    }
-
-                    nextRound = new Round
-                    {
-                        RoundId = Guid.NewGuid(),
-                        GameId = gameId,
-                        ThemeId = theme.ThemeId,
-                        RoundNumber = game.CurrentRound,
-                        Status = RoundStatus.Submitting,
-                        StartTime = DateTime.UtcNow,
-                        EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound)
-                    };
-
-                    game.RoundsList.Add(nextRound);
-                    await _roundRepository.AddAsync(nextRound);
-                }
-            }
-            else
-            {
-                // This was the last round, mark game as finished
-                game.Status = GameStatus.Finished;
-            }
-
-            // Save game changes
-            await _gameRepository.UpdateAsync(game);
-
-            // Get player scores for leaderboard
-            var allPlayerScores = await _playerScoreRepository.GetAllAsync();
-            var gamePlayerScores = allPlayerScores.Where(ps => ps.GameId == gameId);
-            var leaderboard = new List<PlayerScoreDto>();
-
-            foreach (var score in gamePlayerScores)
-            {
-                var user = await _userRepository.GetByIdAsync(score.UserId);
-                leaderboard.Add(new PlayerScoreDto
-                {
-                    UserId = score.UserId,
-                    Username = user?.Username ?? "Unknown User",
-                    TotalScore = score.TotalScore
-                });
-            }
-
-            return new LeaderboardResultDto
-            {
-                GameId = gameId,
-                RoundNumber = game.CurrentRound - 1, // The round that just finished
-                Leaderboard = leaderboard.OrderByDescending(l => l.TotalScore).ToList(),
-                WinningSong = winningSongDto
-            };
+            throw new NotImplementedException();
         }
 
         public async Task<string?> RemoveUserFromGameAsync(Guid userId)
