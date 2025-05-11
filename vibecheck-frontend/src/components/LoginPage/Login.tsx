@@ -44,6 +44,10 @@ const Login = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate('/');
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
@@ -80,6 +84,9 @@ const Login = () => {
                 {loading ? 'Logging in...' : 'Submit'}
               </button>
             </div>
+            <button className="login-back-button" type="button" onClick={handleBack}>
+              ← Back
+            </button>
           </form>
 
         </div>

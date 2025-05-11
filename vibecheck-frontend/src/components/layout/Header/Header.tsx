@@ -1,7 +1,11 @@
 import './Header.css';
 import { useAuth } from '../../../context/AuthProvider';
-import { useNavigate} from 'react-router-dom';
-import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSignalR } from '../../../context/SignalRProvider';
+import { GameDetails } from '../../../types/gameTypes';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 interface HeaderProps {
   hideProfileSection?: boolean;
@@ -10,13 +14,71 @@ interface HeaderProps {
 function Header({ hideProfileSection = false }: HeaderProps): React.ReactElement {
     const { isAuthenticated, user, signOut } = useAuth();
     const navigate = useNavigate();
+    const signalR = useSignalR();
+    const { gameId } = useParams<{ gameId: string }>();
+    const [game, setGame] = useState<GameDetails | null>(null);
+    const [hasJoinedGroup, setHasJoinedGroup] = useState(false);
+
+    const fetchGameDetails = useCallback(async () => {
+        if (!gameId || !user) return;
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/Game/GetGame/${gameId}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch game details');
+            }
+            
+            const gameData: GameDetails = await response.json();
+            setGame(gameData);
+            
+            if (signalR.isConnected && gameData.code && !hasJoinedGroup) {
+                const joined = await signalR.joinGameGroup(gameData.code);
+                if (joined) {
+                    setHasJoinedGroup(true);
+                }
+            }
+            
+            return gameData;
+        } catch (err) {
+            console.error('Error fetching game details:', err);
+            return null;
+        }
+    }, [gameId, user, signalR, hasJoinedGroup]);
+
+    useEffect(() => {
+        fetchGameDetails();
+    }, [fetchGameDetails]);
 
     const handleNavigateToLogin = (): void => {
         navigate('/login');
     };
 
-    const handleNavigateToHome = (): void => {
-        navigate('/');
+    const handleNavigateToHome = async (): Promise<void> => {
+        if (!gameId || !user || !game) {
+            navigate('/');
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_BASE_URL}/api/Game/LeaveGame/${gameId}/${user.id}`,
+                { method: 'POST' }
+            );
+            
+            if (!response.ok) {
+                throw new Error('Failed to leave game');
+            }
+            
+            if (hasJoinedGroup && game.code) {
+                await signalR.leaveGameGroup(game.code);
+            }
+            
+            navigate('/');
+        } catch (err) {
+            console.error('Error leaving game:', err);
+            navigate('/');
+        }
     };
 
     return (
