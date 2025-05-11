@@ -5,7 +5,8 @@ namespace VibeCheck.DAL.Dtos.Songs
 {
     public class SongDto
     {
-        public string SongId { get; set; } = string.Empty; // for Deezer ID
+        public Guid SongId { get; set; }
+        public string DeezerSongId { get; set; } = string.Empty; // for Deezer ID
         public string Title { get; set; } = string.Empty;
         public string Artist { get; set; } = string.Empty;
         public string? AlbumName { get; set; }

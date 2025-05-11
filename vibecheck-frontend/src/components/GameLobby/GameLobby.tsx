@@ -254,7 +254,6 @@ const GameLobby: React.FC = () => {
         setTimeout(() => setCopied(false), 1500);
       }).catch(err => {
         console.error('Failed to copy code: ', err);
-     
       });
     }
   };
@@ -404,7 +403,7 @@ const GameLobby: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-box">
             <span className="setting-label">Rounds</span>
-            <span className="setting-value">{game.rounds}</span>
+            <span className="setting-value">{game.rounds.length}</span>
           </div>
           <div className="setting-box">
             <span className="setting-label">Time per Round</span>

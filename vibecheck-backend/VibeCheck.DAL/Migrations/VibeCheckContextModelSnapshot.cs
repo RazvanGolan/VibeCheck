@@ -39,8 +39,8 @@ namespace VibeCheck.DAL.Migrations
 
             modelBuilder.Entity("SongUser", b =>
                 {
-                    b.Property<string>("SubmittedSongsSongId")
-                        .HasColumnType("text");
+                    b.Property<Guid>("SubmittedSongsSongId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("UsersUserId")
                         .HasColumnType("uuid");
@@ -178,8 +178,9 @@ namespace VibeCheck.DAL.Migrations
 
             modelBuilder.Entity("VibeCheck.DAL.Entities.Song", b =>
                 {
-                    b.Property<string>("SongId")
-                        .HasColumnType("text");
+                    b.Property<Guid>("SongId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AlbumCoverBig")
                         .HasColumnType("text");
@@ -194,6 +195,10 @@ namespace VibeCheck.DAL.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("DeezerId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("PreviewUrl")
                         .HasColumnType("text");
@@ -268,12 +273,15 @@ namespace VibeCheck.DAL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("DeezerSongId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<Guid>("RoundId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("SongId")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<Guid>("SongId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("VotedAt")
                         .HasColumnType("timestamp with time zone");
@@ -287,7 +295,7 @@ namespace VibeCheck.DAL.Migrations
 
                     b.HasIndex("VoterUserId");
 
-                    b.HasIndex("RoundId", "VoterUserId")
+                    b.HasIndex("RoundId", "VoterUserId", "SongId")
                         .IsUnique();
 
                     b.ToTable("Votes", (string)null);

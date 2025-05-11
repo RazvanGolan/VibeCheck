@@ -1,10 +1,9 @@
-﻿
-
-namespace VibeCheck.DAL.Entities
+﻿namespace VibeCheck.DAL.Entities
 {
     public class Song
     {
-        public string SongId { get; set; } = string.Empty; // Deezer song ID
+        public Guid SongId { get; set; }
+        public string DeezerId { get; set; } // Deezer song ID
         public Guid RoundId { get; set; } 
         public string SongTitle { get; set; } = string.Empty;
         public string Artist { get; set; } = string.Empty; 

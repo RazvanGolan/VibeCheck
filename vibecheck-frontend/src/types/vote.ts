@@ -1,10 +1,11 @@
-import { Song } from './song';
-import { User } from './user';
-
 export interface Vote {
-  id: string;
-  song: Song;
-  user: User;
-  votes: number;
-  hasUserVoted?: boolean; // To track if the current user has voted for this submission
+  songId: string;
+  voterUserId: string;
+  voterUserName: string;
+}
+
+export interface SubmitVote {
+  gameId: string;
+  deezerSongId: string;
+  voterUserId: string;
 }

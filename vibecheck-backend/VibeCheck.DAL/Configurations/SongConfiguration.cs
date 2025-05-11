@@ -12,6 +12,9 @@ namespace VibeCheck.DAL.Configurations
 
             builder.HasKey(s => s.SongId);
 
+            builder.Property(s => s.DeezerId)
+                .IsRequired();
+            
             builder.Property(s => s.SongTitle)
                 .IsRequired()
                 .HasMaxLength(200);
@@ -38,8 +41,7 @@ namespace VibeCheck.DAL.Configurations
                 .WithMany(u => u.SubmittedSongs);
 
             builder.HasMany(s => s.Votes)
-                .WithOne(v => v.Song)
-                .HasForeignKey(v => v.SongId);
+                .WithOne(v => v.Song);
         }
     }
 }

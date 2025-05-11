@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using VibeCheck.BL.Interfaces;
+using VibeCheck.DAL.Dtos.Songs;
+using VibeCheck.DAL.Dtos.Users;
 using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.PL.Hubs;
@@ -57,16 +59,15 @@ public class GameHub : Hub
         await Clients.Group(gameCode).SendAsync("GameEnded", game);
     }
     
-    // TODO: implement song submission and voting logic
-    public async Task SubmitSong(string gameCode, string song)
+    public async Task SubmitSong(string gameCode, SongDto song)
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("SongSubmitted", game);
+        await Clients.Group(gameCode).SendAsync("SongSubmitted", game, song);
     }
     
-    public async Task VoteSong(string gameCode, string song)
+    public async Task VoteSong(string gameCode, SongDto song, string userId)
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("SongVoted", game);
+        await Clients.Group(gameCode).SendAsync("SongVoted", game, song, userId);
     }
 }

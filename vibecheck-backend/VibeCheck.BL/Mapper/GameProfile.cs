@@ -36,6 +36,7 @@ namespace VibeCheck.BL.Mapper
                         Songs = r.Songs != null ? r.Songs.Select(s => new SongDto
                         {
                             SongId = s.SongId,
+                            DeezerSongId = s.DeezerId,
                             Title = s.SongTitle,
                             Artist = s.Artist,
                             AlbumName = s.AlbumName,
@@ -43,12 +44,12 @@ namespace VibeCheck.BL.Mapper
                             AlbumCoverBig = s.AlbumCoverBig,
                             PreviewUrl = s.PreviewUrl,
                             SubmittedAt = s.SubmittedAt,
-                            VoteCount = r.Votes != null ? r.Votes.Count(v => v.SongId == s.SongId) : 0,
-                            Votes = r.Votes != null ? r.Votes.Where(v => v.SongId == s.SongId)
+                            VoteCount = r.Votes != null ? r.Votes.Count(v => v.DeezerSongId == s.DeezerId) : 0,
+                            Votes = r.Votes != null ? r.Votes.Where(v => v.DeezerSongId == s.DeezerId)
                                 .Select(v => new VoteDto
                                 {
                                     GameId = r.Game != null ? r.Game.GameId : Guid.Empty, // Replace null-propagating operator  
-                                    SongId = v.SongId,
+                                    DeezerSongId = v.DeezerSongId,
                                     VoterUserId = v.VoterUserId,
                                     VoterUsername = v.VoterUser != null ? v.VoterUser.Username : "Unknown User" // Fix for CS8072
                                 }).ToList() : new List<VoteDto>(),
@@ -71,6 +72,7 @@ namespace VibeCheck.BL.Mapper
             // Song mappings  
             CreateMap<Song, SongDto>()
                 .ForMember(dest => dest.SongId, opt => opt.MapFrom(src => src.SongId))
+                .ForMember(dest => dest.DeezerSongId, opt => opt.MapFrom(src => src.DeezerId))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.SongTitle))
                 .ForMember(dest => dest.VoteCount, opt => opt.Ignore())
                 .ForMember(dest => dest.Votes, opt => opt.MapFrom(src =>
@@ -80,7 +82,7 @@ namespace VibeCheck.BL.Mapper
                             GameId = src.Round != null
                                 ? src.Round.GameId
                                 : Guid.Empty, // Replace null-propagating operator  
-                            SongId = v.SongId,
+                            DeezerSongId = v.DeezerSongId,
                             VoterUserId = v.VoterUserId,
                             VoterUsername =
                                 v.VoterUser != null ? v.VoterUser.Username : "Unknown User" // Fix for CS8072

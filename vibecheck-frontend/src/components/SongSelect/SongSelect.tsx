@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Song } from '../../types/song';
+import { GameDetails, RoundDto } from '../../types/gameTypes';
+import { useAuth } from '../../context/AuthProvider';
+import { useSignalR } from '../../context/SignalRProvider';
 import './SongSelect.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -36,17 +40,22 @@ const defaultSongs: Song[] = [
 ];
 
 const SongSelect = () => {
+  const { gameId } = useParams<{ gameId: string }>();
+  const { user } = useAuth();
+  const signalR = useSignalR();
+  const navigate = useNavigate();
+
+  const [game, setGame] = useState<GameDetails | null>(null);
+  const [currentRound, setCurrentRound] = useState<RoundDto | null>(null);
   const [songs, setSongs] = useState<Song[]>(defaultSongs);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Static data for now - these would come from the game state in a real scenario
-  const roundNumber = 1;
-  const theme = "Road Trip Vibes";
-  const timeRemaining = "1:30";
-
+  // Initialize the audio player
   useEffect(() => {
     audioRef.current = new Audio();
     audioRef.current.addEventListener('ended', () => {
@@ -62,6 +71,97 @@ const SongSelect = () => {
       }
     };
   }, []);
+
+  // Fetch game data
+  useEffect(() => {
+    const fetchGameDetails = async () => {
+      if (!gameId) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/api/Game/GetGame/${gameId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch game details');
+        }
+        
+        const gameData: GameDetails = await response.json();
+        setGame(gameData);
+        
+        // Find the current round
+        const round = gameData.rounds.find(r => r.roundNumber === gameData.currentRound);
+        if (round) {
+          setCurrentRound(round);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching game data:', err);
+        setError('Failed to load game data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGameDetails();
+  }, [gameId]);
+
+  // Setup SignalR connection for real-time updates
+  useEffect(() => {
+    if (!signalR.connection  || !signalR.isConnected) {
+      signalR.connectToHub();
+    }
+
+    if (game?.code) {
+      const joinGroup = async () => {
+        await signalR.joinGameGroup(game.code);
+      };
+      joinGroup();
+    }
+
+    // Listen for round updates
+    signalR.onRoundStarted((roundNumber) => {
+      if (game) {
+        const updatedRound = game.rounds.find(r => r.roundNumber === roundNumber);
+        if (updatedRound) {
+          setCurrentRound(updatedRound);
+        }
+      }
+    });
+
+    return () => {
+      if (game?.code) {
+        signalR.leaveGameGroup(game.code);
+      }
+    };
+  }, [signalR, game]);
+
+  // Update the timer and handle auto-navigation when time runs out
+  useEffect(() => {
+    if (!game || !gameId) return;
+    
+    // Initialize the timer with timePerRound from game
+    const totalSeconds = game.timePerRound;
+    let timeLeft = totalSeconds;
+    
+    const updateTimeRemaining = () => {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      
+      setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        navigate(`/vote/${gameId}`);
+      }
+      
+      timeLeft -= 1;
+    };
+    
+    updateTimeRemaining();
+    const timerInterval = setInterval(updateTimeRemaining, 1000);
+    
+    return () => clearInterval(timerInterval);
+  }, [game, gameId, navigate]);
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -101,7 +201,7 @@ const SongSelect = () => {
     const debounceTimer = setTimeout(() => {
       if (searchQuery.trim()) {
         fetchSongs();
-} else {
+      } else {
         setSongs(defaultSongs);
       }
     }, 500);
@@ -127,20 +227,74 @@ const SongSelect = () => {
     }
   };
 
-  const handleSelectSong = (song: Song) => {
+  const handleSelectSong = async (song: Song) => {
+    if (!gameId || !user || !currentRound) {
+      setError("Cannot submit song - missing game data");
+      return;
+    }
+    
     if (audioRef.current) {
       audioRef.current.pause();
+      setCurrentlyPlaying(null);
     }
-    // Here an API call to submit the song
-    alert(`Selected: ${song.title} by ${song.artistName}`);
+    
+    try {
+      const submitSongDto = {
+        gameId: gameId,
+        userId: user.id,
+        deezerSongId: song.id, // Changed from songId to deezerSongId to match backend DTO
+        title: song.title,
+        artist: song.artistName,
+        albumName: song.albumName,
+        albumCoverSmall: song.albumCoverSmall,
+        albumCoverBig: song.albumCoverBig,
+        previewUrl: song.previewUrl
+      };
+      
+      const response = await fetch(`${API_BASE_URL}/api/Game/SubmitSong`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitSongDto)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit song');
+      }
+      
+      const submittedSong = await response.json(); // Get the response data
+      
+      // Notify other players via SignalR
+      if (signalR.connection && game?.code) {
+        await signalR.connection.invoke("SubmitSong", game.code, submittedSong);
+      }
+      
+      navigate(`/vote/${gameId}`);
+    } catch (err) {
+      console.error('Error submitting song:', err);
+      setError('Failed to submit song. Please try again.');
+    }
   };
+
+  if (loading && !game) {
+    return <div className="loading-state">Loading game data...</div>;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
+
+  if (!game || !currentRound) {
+    return <div className="error-message">Game data not found or round not available</div>;
+  }
 
   return (
     <div className="song-select-container">
       <div className="round-info">
-        <div className="round-number">Round {roundNumber}</div>
-        <div className="theme">Theme: {theme}</div>
-        <div className="time-remaining">⏱ {timeRemaining} remaining</div>
+        <div className="round-number">Round {currentRound.roundNumber}</div>
+        <div className="theme">Theme: {currentRound.theme?.name || "Unknown Theme"}</div>
+        <div className="time-remaining">⏱ {timeRemaining || "0:00"} remaining</div>
       </div>
 
       <div className="search-box">

@@ -49,7 +49,7 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/vote" element={
+            <Route path="/vote/:gameId" element={
               <ProtectedRoute>
                 <Layout>
                   <VotingPage />

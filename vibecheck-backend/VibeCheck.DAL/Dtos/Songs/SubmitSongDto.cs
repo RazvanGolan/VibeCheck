@@ -5,7 +5,7 @@
         public Guid GameId { get; set; }
         public Guid UserId { get; set; }
 
-        public string SongId { get; set; } = string.Empty; // Deezer song ID
+        public string DeezerSongId { get; set; } = string.Empty; // Deezer song ID
         public string Title { get; set; } = string.Empty;
         public string Artist { get; set; } = string.Empty;
         public string? AlbumName { get; set; }

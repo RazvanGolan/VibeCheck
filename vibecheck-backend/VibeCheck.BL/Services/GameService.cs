@@ -247,7 +247,7 @@ namespace VibeCheck.BL.Services
             }
 
             // Check if song already exists in the current round
-            var existingSong = currentRound.Songs.FirstOrDefault(s => s.SongId == songDto.SongId);
+            var existingSong = currentRound.Songs.FirstOrDefault(s => s.DeezerId == songDto.DeezerSongId);
             if (existingSong != null)
             {
                 if (existingSong.Users.Contains(userInGame))
@@ -265,7 +265,8 @@ namespace VibeCheck.BL.Services
             // Create new song with the provided Deezer ID
             var song = new Song
             {
-                SongId = songDto.SongId, // Use Deezer ID directly
+                SongId = Guid.NewGuid(),
+                DeezerId = songDto.DeezerSongId,
                 RoundId = currentRound.RoundId,
                 SongTitle = songDto.Title,
                 Artist = songDto.Artist,
@@ -298,7 +299,7 @@ namespace VibeCheck.BL.Services
                 ?? throw new KeyNotFoundException("Current round not found");
 
             // Check if song exists and belongs to current round - from already loaded data
-            var song = currentRound.Songs.FirstOrDefault(s => s.SongId == voteDto.SongId);
+            var song = currentRound.Songs.FirstOrDefault(s => s.DeezerId == voteDto.DeezerSongId);
             if (song == null)
             {
                 throw new KeyNotFoundException("Song not found in current round");
@@ -329,7 +330,8 @@ namespace VibeCheck.BL.Services
             {
                 VoteId = Guid.NewGuid(),
                 RoundId = currentRound.RoundId,
-                SongId = voteDto.SongId,
+                SongId = song.SongId,
+                DeezerSongId = song.DeezerId,
                 VoterUserId = voteDto.VoterUserId,
                 VoterUser = voter,
                 VotedAt = DateTime.UtcNow
