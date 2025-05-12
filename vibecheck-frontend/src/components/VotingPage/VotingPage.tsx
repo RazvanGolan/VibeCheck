@@ -82,6 +82,8 @@ const VotingPage = () => {
             // Get user information if available
             const submitters = song.users || [];
             
+            // Check if current user is a submitter of this song
+            const isUserSubmitter = user ? submitters.some(submitter => submitter.userId === user.id) : false;
             songSubmissions.push({
               id: song.id,
               deezerSongId: song.deezerSongId,
@@ -89,7 +91,8 @@ const VotingPage = () => {
               users: submitters,
               votes: voteCount,
               hasUserVoted: hasVoted,
-              votedBy: votedByIds
+              votedBy: votedByIds,
+              isUserSubmitter: isUserSubmitter
             });
           }
           
@@ -138,7 +141,10 @@ const VotingPage = () => {
             const voteCount = song.voteCount;
             const hasVoted = song.votes?.some((vote: Vote) => vote.voterUserId === user?.id) || false;
             const votedByIds = song.votes?.map((vote: Vote) => vote.voterUserId) || [];
-
+            
+            // Check if current user is a submitter of this song
+            const isUserSubmitter = user ? (song.users || []).some(submitter => submitter.userId === user.id) : false;
+            
             return {
               id: song.id,
               deezerSongId: song.deezerSongId,
@@ -146,7 +152,8 @@ const VotingPage = () => {
               users: song.users || [],
               votes: voteCount,
               hasUserVoted: hasVoted,
-              votedBy: votedByIds
+              votedBy: votedByIds,
+              isUserSubmitter: isUserSubmitter
             };
           });
           
@@ -169,6 +176,8 @@ const VotingPage = () => {
             const voteCount = song.voteCount;
             const hasVoted = song.votes?.some((vote: Vote) => vote.voterUserId === user?.id) || false;
             const votedByIds = song.votes?.map((vote: Vote) => vote.voterUserId) || [];
+            // Check if current user is a submitter of this song
+            const isUserSubmitter = user ? (song.users || []).some(submitter => submitter.userId === user.id) : false;
             
             return {
               id: song.id,
@@ -177,7 +186,8 @@ const VotingPage = () => {
               users: song.users || [],
               votes: voteCount,
               hasUserVoted: hasVoted,
-              votedBy: votedByIds
+              votedBy: votedByIds,
+              isUserSubmitter: isUserSubmitter
             };
           });
           
@@ -189,16 +199,14 @@ const VotingPage = () => {
       // Listen for time sync updates
       signalR.onRoundTimeSync((timeInfo) => {
         if (timeInfo) {
-          const { TotalTimeRemaining, RoundEndTime, CurrentPhase } = timeInfo;
-          
-          if (CurrentPhase === 'voting') {
-            const endTimeDate = new Date(RoundEndTime);
-            endTimeRef.current = endTimeDate;
-            
-            const minutes = Math.floor(TotalTimeRemaining / 60);
-            const seconds = Math.floor(TotalTimeRemaining % 60);
-            setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
-          }
+          const { totalTimeRemaining, roundEndTime, currentPhase } = timeInfo;
+
+          const endTimeDate = new Date(roundEndTime);
+          endTimeRef.current = endTimeDate;
+
+          const minutes = Math.floor(totalTimeRemaining / 60);
+          const seconds = Math.floor(totalTimeRemaining % 60);
+          setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
         }
       });
 
@@ -221,40 +229,35 @@ const VotingPage = () => {
 
   // Update the timer based on endTimeRef
   useEffect(() => {
-    // Clear any existing timer
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
 
     if (!gameId || !endTimeRef.current) return;
 
-    // Function to update the timer
     const updateTimer = () => {
       if (!endTimeRef.current) return;
       
       const now = new Date();
       const timeDiff = endTimeRef.current.getTime() - now.getTime();
-      const secondsRemaining = Math.max(0, Math.floor(timeDiff / 1000));
-            
-      const minutes = Math.floor(secondsRemaining / 60);
-      const seconds = secondsRemaining % 60;
+      const currentSecondsRemaining = Math.max(0, Math.floor(timeDiff / 1000));
+      
+      // Update the display
+      const minutes = Math.floor(currentSecondsRemaining / 60);
+      const seconds = currentSecondsRemaining % 60;
       setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
     };
-
-    // Request time sync from server when component mounts or game changes
-    if (gameId) {
-      signalR.requestRoundTimeSync(gameId);
-    }
     
     updateTimer();
-    timerRef.current = setInterval(updateTimer, 1000);
-    
+    const intervalId = setInterval(updateTimer, 1000);
+    timerRef.current = intervalId;    
+
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearInterval(intervalId);
       }
     };
-  }, [gameId, game?.code, signalR]);
+  }, [gameId, endTimeRef.current]);
 
   // Re-sync time every 10 seconds to prevent drift and stay synchronized
   useEffect(() => {
@@ -265,7 +268,7 @@ const VotingPage = () => {
     }, 10000);
     
     return () => clearInterval(syncInterval);
-  }, [game?.code, signalR, gameId]);
+  }, [gameId, signalR]);
 
   const handlePlayToggle = (submission: SongSubmission) => {
     if (currentlyPlaying === submission.id) {
@@ -286,7 +289,11 @@ const VotingPage = () => {
   };
 
   const handleVote = async (songId: string) => {
-    if (!gameId || !user || !currentRound || userHasVoted) return;
+    // Find the song submission
+    const submission = submissions.find(sub => sub.deezerSongId === songId);
+    
+    // Return if user can't vote or if this is the user's submission
+    if (!gameId || !user || !currentRound || userHasVoted || (submission && submission.isUserSubmitter)) return;
 
     try {
       // Create vote object
@@ -391,7 +398,7 @@ const VotingPage = () => {
                               <div className="submitter-avatars">
                                 {submission.users.map((user, i) => (
                                   <img 
-                                    key={user.id}
+                                    key={user.userId}
                                     src={user.avatar || '/avatars/1.png'} 
                                     alt={`${user.username}'s avatar`}
                                     className="submitter-avatar"
@@ -402,7 +409,7 @@ const VotingPage = () => {
                               <span className="submitter-name">
                                 Submitted by <b>
                                 {submission.users.map((user, i) => (
-                                  <span key={user.id}>
+                                  <span key={user.userId}>
                                     {i > 0 && (i === submission.users.length - 1 ? " & " : ", ")}
                                     {user.username}
                                   </span>
@@ -448,11 +455,11 @@ const VotingPage = () => {
                       </div>
                       
                       <button
-                        className={`vote-button ${submission.hasUserVoted ? 'voted' : ''} ${userHasVoted && !submission.hasUserVoted ? 'disabled' : ''}`}
+                        className={`vote-button ${submission.hasUserVoted ? 'voted' : ''} ${userHasVoted && !submission.hasUserVoted ? 'disabled' : ''} ${submission.isUserSubmitter ? 'disabled' : ''}`}
                         onClick={() => handleVote(submission.deezerSongId)}
-                        disabled={userHasVoted || timeRemaining === '0:00'}
+                        disabled={userHasVoted || timeRemaining === '0:00' || submission.isUserSubmitter}
                       >
-                        {submission.hasUserVoted ? 'Voted ✓' : 'Vote'}
+                        {submission.hasUserVoted ? 'Voted ✓' : submission.isUserSubmitter ? 'Your Song' : 'Vote'}
                       </button>
                     </div>
                   </div>
@@ -468,7 +475,7 @@ const VotingPage = () => {
                 The winner is "{submissions[0].song.title}" by {submissions[0].song.artistName}, 
                 submitted by {submissions[0].users.length > 0 
                   ? submissions[0].users.map((user, i) => (
-                      <span key={user.id}>
+                      <span key={user.userId}>
                         {i > 0 && (i === submissions[0].users.length - 1 ? " & " : ", ")}
                         <b>{user.username}</b>
                       </span>

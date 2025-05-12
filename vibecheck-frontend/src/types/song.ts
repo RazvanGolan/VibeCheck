@@ -1,4 +1,4 @@
-import { User } from "./user";
+import { User, UserDto } from "./user";
 import { Vote } from "./vote";
 
 export interface Song {
@@ -24,15 +24,16 @@ export interface SongDto {
   albumCoverBig: string;
   voteCount: number;
   votes?: Vote[];
-  users?: User[];
+  users?: UserDto[];
 }
 
 export interface SongSubmission {
   id: string;
   deezerSongId: string;
-  song: Song;
-  users: User[];
+  song: SongDto;
+  users: UserDto[];
   votes: number;
   hasUserVoted: boolean;
   votedBy?: string[];
+  isUserSubmitter?: boolean;
 }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using VibeCheck.BL.Interfaces;
 using VibeCheck.DAL.Dtos.Games;
 using VibeCheck.DAL.Dtos.Leaderboard;
@@ -361,25 +361,21 @@ namespace VibeCheck.BL.Services
 
         public async Task<GameDto> StartGameAsync(Guid gameId)
         {
-            // First get the game with all details
             var game = await _gameRepository.GetByIdWithDetailsAsync(gameId)
                        ?? throw new KeyNotFoundException($"Game with code {gameId} not found");
-                       
-            // Get the first round independently to ensure it's tracked properly
-            var firstRound = await _roundRepository.GetByIdAsync(
-                game.RoundsList.FirstOrDefault()?.RoundId ?? throw new ArgumentException(nameof(game.RoundsList)));
+            
+            var firstRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == 1);
             
             if (firstRound == null)
                 throw new KeyNotFoundException("First round could not be found");
                 
-            // Update directly
             game.Status = GameStatus.Active;
             firstRound.StartTime = DateTime.UtcNow;
             firstRound.EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound + game.Participants.Count * 20);
             
-            // Update both entities
+            // Only update the game - the related round will be updated automatically
             await _gameRepository.UpdateAsync(game);
-            await _roundRepository.UpdateAsync(firstRound);
+            
             return _mapper.Map<GameDto>(game);
         }
 
