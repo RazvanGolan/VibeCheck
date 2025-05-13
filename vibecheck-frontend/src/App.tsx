@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthProvider';
 import { SignalRProvider } from './context/SignalRProvider';
 import ProtectedRoute from './context/ProtectedRoute';
 import GameLobby from './components/GameLobby/GameLobby';
+import VotingPage from './components/VotingPage/VotingPage';
 
 function App() {
   return (
@@ -41,13 +42,21 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/select" element={
+            <Route path="/select/:gameId" element={
               <ProtectedRoute>
                 <Layout>
                   <SongSelect />
                 </Layout>
               </ProtectedRoute>
             } />
+            <Route path="/vote/:gameId" element={
+              <ProtectedRoute>
+                <Layout>
+                  <VotingPage />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            {/* Redirect all other paths to the main page */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </SignalRProvider>

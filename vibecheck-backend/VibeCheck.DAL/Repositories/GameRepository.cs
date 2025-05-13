@@ -26,25 +26,45 @@ namespace VibeCheck.DAL.Repositories
         public async Task<Game?> GetByCodeAsync(string code)
         {
             return await _context.Games
-                .Include(g => g.Participants)
-                .FirstOrDefaultAsync(g => g.Code == code);
-        }
-
-        public async Task<Game?> GetByIdWithDetailsAsync(Guid id)
-        {
-            return await _context.Games
+                .AsSplitQuery()
+                .Where(g=> g.Code == code)
                 .Include(g => g.Participants)
                 .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Theme)
                 .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.Users)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.Votes)
+                            .ThenInclude(v => v.VoterUser)
                 .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Votes)
                         .ThenInclude(v => v.VoterUser) 
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Game?> GetByIdWithDetailsAsync(Guid id)
+        {
+            return await _context.Games
+                .AsSplitQuery()
+                .Where(g=> g.GameId == id)
+                .Include(g => g.Participants)
                 .Include(g => g.RoundsList)
                     .ThenInclude(r => r.Theme)
-                .FirstOrDefaultAsync(g => g.GameId == id);
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.Users)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Songs)
+                        .ThenInclude(s => s.Votes)
+                            .ThenInclude(v => v.VoterUser)
+                .Include(g => g.RoundsList)
+                    .ThenInclude(r => r.Votes)
+                        .ThenInclude(v => v.VoterUser) 
+                .FirstOrDefaultAsync();
         }
+        
         public async Task<Game?> GetByUserIdAsync(Guid userId)
         {
             return await _context.Games
