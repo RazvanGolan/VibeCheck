@@ -135,19 +135,6 @@ namespace VibeCheck.BL.Services
             return _mapper.Map<GameDto>(updatedGame);
         }
 
-        public async Task<GameDto> UpdateGameStatusAsync(Guid id, GameStatus status)
-        {
-            var game = await _gameRepository.GetByIdAsync(id)
-                ?? throw new KeyNotFoundException($"Game with id {id} not found");
-            
-            if (!Enum.IsDefined(typeof(GameStatus), status))
-                throw new InvalidOperationException("Invalid game status");
-            
-            game.Status = status;
-            var updatedGame = await _gameRepository.UpdateAsync(game);
-            return _mapper.Map<GameDto>(updatedGame);
-        }
-
         public async Task<GameDto> DeleteGameAsync(Guid id)
         {
             var game = await _gameRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException($"Game with id {id} not found");
@@ -374,6 +361,28 @@ namespace VibeCheck.BL.Services
             firstRound.EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound + game.Participants.Count * 20);
             
             // Only update the game - the related round will be updated automatically
+            await _gameRepository.UpdateAsync(game);
+            
+            return _mapper.Map<GameDto>(game);
+        }
+
+        public async Task<GameDto> StartRoundAsync(Guid gameId)
+        {
+            var game = await _gameRepository.GetByIdWithDetailsAsync(gameId)
+                       ?? throw new KeyNotFoundException($"Game with code {gameId} not found");
+
+            if (game.CurrentRound >= game.TotalRounds)
+                throw new InvalidOperationException("All rounds have already been played");
+            
+            game.CurrentRound++;
+            
+            var currentRound = game.RoundsList.FirstOrDefault(r => r.RoundNumber == game.CurrentRound);
+            if (currentRound == null)
+                throw new KeyNotFoundException("Current round could not be found");
+            
+            currentRound.StartTime = DateTime.UtcNow;
+            currentRound.EndTime = DateTime.UtcNow.AddSeconds(game.TimePerRound + game.Participants.Count * 20);
+            
             await _gameRepository.UpdateAsync(game);
             
             return _mapper.Map<GameDto>(game);

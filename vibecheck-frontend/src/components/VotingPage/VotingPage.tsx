@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthProvider';
 import { useSignalR } from '../../context/SignalRProvider';
 import { SubmitVote, Vote } from '../../types/vote';
@@ -14,6 +14,7 @@ const VotingPage = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
   const signalR = useSignalR();
+  const navigate = useNavigate();
 
   const [game, setGame] = useState<GameDetails | null>(null);
   const [currentRound, setCurrentRound] = useState<RoundDto | null>(null);
@@ -23,9 +24,13 @@ const VotingPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [userHasVoted, setUserHasVoted] = useState<boolean>(false);
+  const [isHost, setIsHost] = useState<boolean>(false);
+  const [nextRoundTriggered, setNextRoundTriggered] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<Date | null>(null);
+  const [roundEndingCountdown, setRoundEndingCountdown] = useState<number | null>(null);
+  const [gameEnded, setGameEnded] = useState<boolean>(false);
 
   // Request time sync as soon as gameId is available
   useEffect(() => {
@@ -109,7 +114,7 @@ const VotingPage = () => {
     };
 
     fetchGameDetails();
-  }, [gameId, user?.id]);
+  }, [gameId, user?.id, user]);
 
   // Setup SignalR connection for real-time updates
   useEffect(() => {
@@ -123,6 +128,11 @@ const VotingPage = () => {
         await signalR.requestRoundTimeSync(gameId);
       };
       joinGroup();
+
+      // Check if user is the host
+      if (user && game.hostUserId === user.id) {
+        setIsHost(true);
+      }
     }
 
     // Listen for vote updates and song submissions
@@ -159,6 +169,15 @@ const VotingPage = () => {
           
           setSubmissions(updatedSubmissions.sort((a, b) => b.votes - a.votes));
           setUserHasVoted(updatedSubmissions.some(sub => sub.hasUserVoted));
+          
+          // Check if all users have voted
+          const totalVotes = updatedRound.songs.reduce((acc, song) => acc + song.voteCount, 0);
+          const allVoted = totalVotes === game?.participants.length;
+
+          if (allVoted && !nextRoundTriggered && !gameEnded) {
+            setTimeRemaining('0:00');
+            handleRoundComplete();
+          }
         }
       });
       
@@ -193,13 +212,22 @@ const VotingPage = () => {
           
           setSubmissions(updatedSubmissions.sort((a, b) => b.votes - a.votes));
           setUserHasVoted(updatedSubmissions.some(sub => sub.hasUserVoted));
+          
+          // Check if all users have voted
+          const totalVotes = updatedRound.songs.reduce((acc, song) => acc + song.voteCount, 0);
+          const allVoted = totalVotes === game?.participants.length;
+            
+          if (allVoted && !nextRoundTriggered && !gameEnded) {
+            setTimeRemaining('0:00');
+            handleRoundComplete();
+          }
         }
       });
 
       // Listen for time sync updates
       signalR.onRoundTimeSync((timeInfo) => {
         if (timeInfo) {
-          const { totalTimeRemaining, roundEndTime, currentPhase } = timeInfo;
+          const { totalTimeRemaining, roundEndTime } = timeInfo;
 
           const endTimeDate = new Date(roundEndTime);
           endTimeRef.current = endTimeDate;
@@ -207,11 +235,17 @@ const VotingPage = () => {
           const minutes = Math.floor(totalTimeRemaining / 60);
           const seconds = Math.floor(totalTimeRemaining % 60);
           setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+          
+          // If timer has reached zero and this user is the host, schedule next round
+          if (totalTimeRemaining <= 0 && !nextRoundTriggered && !gameEnded) {
+            handleRoundComplete();
+          }
         }
       });
 
-      signalR.connection.on("RoundEnded", () => {
-        // Handle round ended (could navigate to results or next round)
+      // Listen for round started event
+      signalR.connection.on("RoundStarted", (updatedGame: GameDetails) => {
+        navigate(`/select/${gameId}`);
       });
     }
 
@@ -222,10 +256,10 @@ const VotingPage = () => {
       if (signalR.connection) {
         signalR.connection.off("SongSubmitted");
         signalR.connection.off("SongVoted");
-        signalR.connection.off("RoundEnded");
+        signalR.connection.off("RoundStarted");
       }
     };
-  }, [signalR, game, user?.id, gameId]);
+  }, [signalR, game, user?.id, gameId, isHost, nextRoundTriggered, navigate]);
 
   // Update the timer based on endTimeRef
   useEffect(() => {
@@ -269,6 +303,43 @@ const VotingPage = () => {
     
     return () => clearInterval(syncInterval);
   }, [gameId, signalR]);
+
+  useEffect(() => {
+  if (roundEndingCountdown === null) return;
+    
+  // If countdown reaches zero, start the next round
+  if (roundEndingCountdown === 0) {    
+    // Start the next round
+    if (signalR.connection && gameId && isHost) {
+      (async () => {
+        try {
+          if (signalR.connection && gameId)
+            await signalR.connection.invoke("StartRound", gameId);
+        } catch (err) {
+          console.error("Error starting next round:", err);
+          // Reset states if there's an error so we can try again
+          setNextRoundTriggered(false);
+          setRoundEndingCountdown(null);
+        }
+      })();
+    }
+    return;
+  }
+  
+  // Set up the interval to decrement the countdown
+  const intervalId = setInterval(() => {
+    setRoundEndingCountdown(prev => {
+      if (prev === null || prev <= 0) {
+        clearInterval(intervalId);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+  
+  // Clean up the interval when the component unmounts or when countdown changes
+  return () => clearInterval(intervalId);
+}, [roundEndingCountdown, signalR.connection, gameId]);
 
   const handlePlayToggle = (submission: SongSubmission) => {
     if (currentlyPlaying === submission.id) {
@@ -344,6 +415,19 @@ const VotingPage = () => {
       console.error('Error submitting vote:', err);
       setError('Failed to submit vote. Please try again.');
     }
+  };
+
+    // Handle round completion
+  const handleRoundComplete = () => {
+    if (nextRoundTriggered) return;
+    setNextRoundTriggered(true);
+
+    if (game && game.currentRound === game.totalRounds) {
+      setGameEnded(true);
+      return;
+    }
+
+    setRoundEndingCountdown(10);
   };
 
   return (
@@ -483,6 +567,16 @@ const VotingPage = () => {
                   : <b>Unknown User</b>}!
               </p>
             </div>
+          )}
+          {roundEndingCountdown !== null && roundEndingCountdown > 0 && (
+            <p className="next-round-countdown">
+              Next round starting in {roundEndingCountdown} seconds...
+            </p>
+          )}
+          {gameEnded && (
+            <p className="game-ended-message">
+              The game has ended! Thank you for playing!
+            </p>
           )}
         </>
       )}

@@ -45,10 +45,10 @@ public class GameHub : Hub
         await Clients.Group(gameCode).SendAsync("GameStarted", updatedGame);
     }
     
-    public async Task EndGame(string gameCode)
+    public async Task StartRound(string gameId)
     {
-        var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("GameEnded", game);
+        var game = await _gameService.StartRoundAsync(Guid.Parse(gameId));
+        await Clients.Group(game.Code).SendAsync("RoundStarted", game);
     }
     
     public async Task SubmitSong(string gameCode, SongDto song)
@@ -86,17 +86,13 @@ public class GameHub : Hub
             var totalTimeRemaining = Math.Max(0, (roundEndTime - serverTime).TotalSeconds);
             var selectionTimeRemaining = Math.Max(0, (selectionPhaseEndTime - serverTime).TotalSeconds);
             
-            var isInSelectionPhase = serverTime < selectionPhaseEndTime;
-            var phase = isInSelectionPhase ? "selection" : "voting";
-            
             await Clients.Group(game.Code).SendAsync("RoundTimeSync", 
                 new { 
                     ServerTime = serverTime,
                     SelectionPhaseEndTime = selectionPhaseEndTime,
                     RoundEndTime = roundEndTime,
                     TotalTimeRemaining = totalTimeRemaining,
-                    SelectionTimeRemaining = selectionTimeRemaining,
-                    CurrentPhase = phase
+                    SelectionTimeRemaining = selectionTimeRemaining
                 });
         }
     }

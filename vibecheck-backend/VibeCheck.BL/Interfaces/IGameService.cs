@@ -18,8 +18,6 @@ namespace VibeCheck.BL.Interfaces
 
         Task<GameDto> UpdateGameAsync(Guid id, UpdateGameDto updateGameDto);
         
-        Task<GameDto> UpdateGameStatusAsync(Guid id, GameStatus status);
-
         Task<GameDto> DeleteGameAsync(Guid id);
 
         Task<GameDto> JoinGameAsync(string gameCode, Guid userId);
@@ -37,5 +35,7 @@ namespace VibeCheck.BL.Interfaces
         Task<string?> RemoveUserFromGameAsync(Guid userId);
         
         Task<GameDto> StartGameAsync(Guid gameId);
+        
+        Task<GameDto> StartRoundAsync(Guid gameId);
     }
 }
