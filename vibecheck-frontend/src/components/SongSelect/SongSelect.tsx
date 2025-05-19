@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Song } from '../../types/song';
+import { GameDetails, RoundDto } from '../../types/gameTypes';
+import { useAuth } from '../../context/AuthProvider';
+import { useSignalR } from '../../context/SignalRProvider';
 import './SongSelect.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
@@ -9,7 +13,7 @@ const defaultSongs: Song[] = [
   {
     id: "781592622",
     title: "Never Gonna Give You Up",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3?hdnea=exp=1744463486~acl=/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3*~data=user_id=0,application_id=42~hmac=a72f371c913c8c283fefecf2df7817f31af0095cd69c22b9d12d143fc9df2c7b",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3?hdnea=exp=1745588479~acl=/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3*~data=user_id=0,application_id=42~hmac=c679d23427f630d2a73d67a4648143ee00ecd9835a4d585c1b86b3fbb1813189",
     artistName: "Rick Astley",
     albumName: "The Best of Me",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/fe779e632872f7c6e9f1c84ffa7afc33/56x56-000000-80-0-0.jpg",
@@ -18,7 +22,7 @@ const defaultSongs: Song[] = [
   {
     id: "2404839565",
     title: "Ciocolata",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3?hdnea=exp=1744463502~acl=/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3*~data=user_id=0,application_id=42~hmac=68b5d7a7c9a680b19692efe29059bbfe3795dc7b8c319e1c0cc90c0460808444",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3?hdnea=exp=1745588577~acl=/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3*~data=user_id=0,application_id=42~hmac=ff07d890c8f459470918b620093bf3ad71e5d5ffb724c1fe01df259e3d46fc00",
     artistName: "Tzanca Uraganu",
     albumName: "Ciocolata",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/d4db5f5d0652e2b9bfc93e89c9e5b564/56x56-000000-80-0-0.jpg",
@@ -27,7 +31,7 @@ const defaultSongs: Song[] = [
   {
     id: "10199904",
     title: "Animal I Have Become",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3?hdnea=exp=1744463537~acl=/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3*~data=user_id=0,application_id=42~hmac=3db73e9968519857c15e7a4571db1cd18e63c135beb45ed6da16e179fc96e157",
+    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3?hdnea=exp=1745588618~acl=/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3*~data=user_id=0,application_id=42~hmac=7d12b94347e94de574c4ca405f8a9b2510b89588af141931b269fc10e6b88460",
     artistName: "Three Days Grace",
     albumName: "One-X",
     albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/c7f57c5507ba7753412f52371b475806/56x56-000000-80-0-0.jpg",
@@ -36,17 +40,31 @@ const defaultSongs: Song[] = [
 ];
 
 const SongSelect = () => {
+  const { gameId } = useParams<{ gameId: string }>();
+  const { user } = useAuth();
+  const signalR = useSignalR();
+  const navigate = useNavigate();
+
+  const [game, setGame] = useState<GameDetails | null>(null);
+  const [currentRound, setCurrentRound] = useState<RoundDto | null>(null);
   const [songs, setSongs] = useState<Song[]>(defaultSongs);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const endTimeRef = useRef<Date | null>(null);
+  
+  // Request time sync as soon as gameId is available
+  useEffect(() => {
+    if (gameId && signalR.isConnected) {
+      signalR.requestRoundTimeSync(gameId);
+    }
+  }, [gameId, signalR.isConnected, signalR]);
 
-  // Static data for now - these would come from the game state in a real scenario
-  const roundNumber = 1;
-  const theme = "Road Trip Vibes";
-  const timeRemaining = "1:30";
-
+  // Initialize the audio player
   useEffect(() => {
     audioRef.current = new Audio();
     audioRef.current.addEventListener('ended', () => {
@@ -62,6 +80,135 @@ const SongSelect = () => {
       }
     };
   }, []);
+
+  // Fetch game data
+  useEffect(() => {
+    const fetchGameDetails = async () => {
+      if (!gameId) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/api/Game/GetGame/${gameId}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch game details');
+        }
+        
+        const gameData: GameDetails = await response.json();
+        setGame(gameData);
+        
+        // Find the current round
+        const round = gameData.rounds.find(r => r.roundNumber === gameData.currentRound);
+        if (round) {
+          setCurrentRound(round);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching game data:', err);
+        setError('Failed to load game data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGameDetails();
+  }, [gameId]);
+
+  // Setup SignalR connection for real-time updates
+  useEffect(() => {
+    if (!signalR.connection  || !signalR.isConnected) {
+      signalR.connectToHub();
+    }
+
+    if (game?.code && gameId) {
+      const joinGroup = async () => {
+        await signalR.joinGameGroup(game.code);
+        await signalR.requestRoundTimeSync(gameId);
+      };
+      joinGroup();
+    }
+
+    // Listen for round updates
+    signalR.onRoundStarted((roundNumber) => {
+      if (game) {
+        const updatedRound = game.rounds.find(r => r.roundNumber === roundNumber);
+        if (updatedRound) {
+          setCurrentRound(updatedRound);
+        }
+      }
+    });
+
+    // Listen for time sync updates
+    signalR.onRoundTimeSync((timeInfo) => {
+      if (timeInfo) {
+        const { selectionTimeRemaining, selectionPhaseEndTime } = timeInfo;
+
+        const endTimeDate = new Date(selectionPhaseEndTime);
+        endTimeRef.current = endTimeDate;
+        
+        const minutes = Math.floor(selectionTimeRemaining / 60);
+        const seconds = Math.floor(selectionTimeRemaining % 60);
+        setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      }
+    });
+
+    return () => {
+      if (game?.code) {
+        signalR.leaveGameGroup(game.code);
+      }
+    };
+  }, [signalR, game, gameId]);
+
+  // Update the timer and handle auto-navigation when time runs out
+  useEffect(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+
+    if (!gameId || !endTimeRef.current) return;
+
+    const updateTimer = () => {
+      if (!endTimeRef.current) return;
+      
+      const now = new Date();
+      const timeDiff = endTimeRef.current.getTime() - now.getTime();
+      const currentSecondsRemaining = Math.max(0, Math.floor(timeDiff / 1000));   
+            
+      const minutes = Math.floor(currentSecondsRemaining / 60);
+      const seconds = currentSecondsRemaining % 60;
+      setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      
+      if (currentSecondsRemaining <= 0) {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        navigate(`/vote/${gameId}`);
+      }
+    };
+
+    updateTimer();
+
+    // Create a precise interval timer
+    const intervalId = setInterval(updateTimer, 1000);
+    timerRef.current = intervalId;
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [gameId, navigate, endTimeRef.current]);
+
+  // Re-sync time every 10 seconds to prevent drift and ensure phase transitions
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      if (gameId) {
+        signalR.requestRoundTimeSync(gameId);
+      }
+    }, 10000); 
+    
+    return () => clearInterval(syncInterval);
+  }, [gameId, signalR]);
 
   useEffect(() => {
     const fetchSongs = async () => {
@@ -101,7 +248,7 @@ const SongSelect = () => {
     const debounceTimer = setTimeout(() => {
       if (searchQuery.trim()) {
         fetchSongs();
-} else {
+      } else {
         setSongs(defaultSongs);
       }
     }, 500);
@@ -127,20 +274,74 @@ const SongSelect = () => {
     }
   };
 
-  const handleSelectSong = (song: Song) => {
+  const handleSelectSong = async (song: Song) => {
+    if (!gameId || !user || !currentRound) {
+      setError("Cannot submit song - missing game data");
+      return;
+    }
+    
     if (audioRef.current) {
       audioRef.current.pause();
+      setCurrentlyPlaying(null);
     }
-    // Here an API call to submit the song
-    alert(`Selected: ${song.title} by ${song.artistName}`);
+    
+    try {
+      const submitSongDto = {
+        gameId: gameId,
+        userId: user.id,
+        deezerSongId: song.id, // Changed from songId to deezerSongId to match backend DTO
+        title: song.title,
+        artist: song.artistName,
+        albumName: song.albumName,
+        albumCoverSmall: song.albumCoverSmall,
+        albumCoverBig: song.albumCoverBig,
+        previewUrl: song.previewUrl
+      };
+      
+      const response = await fetch(`${API_BASE_URL}/api/Game/SubmitSong`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitSongDto)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit song');
+      }
+      
+      const submittedSong = await response.json(); // Get the response data
+      
+      // Notify other players via SignalR
+      if (signalR.connection && game?.code) {
+        await signalR.connection.invoke("SubmitSong", game.code, submittedSong);
+      }
+      
+      navigate(`/vote/${gameId}`);
+    } catch (err) {
+      console.error('Error submitting song:', err);
+      setError('Failed to submit song. Please try again.');
+    }
   };
+
+  if (loading && !game) {
+    return <div className="loading-state">Loading game data...</div>;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
+
+  if (!game || !currentRound) {
+    return <div className="error-message">Game data not found or round not available</div>;
+  }
 
   return (
     <div className="song-select-container">
       <div className="round-info">
-        <div className="round-number">Round {roundNumber}</div>
-        <div className="theme">Theme: {theme}</div>
-        <div className="time-remaining">⏱ {timeRemaining} remaining</div>
+        <div className="round-number">Round {currentRound.roundNumber}</div>
+        <div className="theme">Theme: {currentRound.theme?.name || "Unknown Theme"}</div>
+        <div className="time-remaining">⏱ {timeRemaining || "0:00"} remaining</div>
       </div>
 
       <div className="search-box">

@@ -73,7 +73,8 @@ namespace VibeCheck.DAL.Configurations
 
             builder.HasMany(g => g.RoundsList)
                 .WithOne(r => r.Game)
-                .HasForeignKey(r => r.GameId);
+                .HasForeignKey(r => r.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(g => g.Leaderboard)
                 .WithOne(ps => ps.Game)

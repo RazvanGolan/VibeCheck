@@ -9,7 +9,7 @@ import QRCode from 'react-qr-code';
 
 const GameLobby: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const signalR = useSignalR();
@@ -80,6 +80,7 @@ const GameLobby: React.FC = () => {
     signalR.removeEventListener("PlayerJoined");
     signalR.removeEventListener("PlayerLeft");
     signalR.removeEventListener("GameStateChanged");
+    signalR.removeEventListener("GameStarted");
     
     signalR.onPlayerJoined((updatedParticipants: UserDto[]) => {
       setGame(prevGame => {
@@ -113,6 +114,12 @@ const GameLobby: React.FC = () => {
       if (gameStatus === 'Active') {
         navigate(`/gameroom/${gameId}`);
       }
+    });
+    
+    signalR.onGameStarted((gameData: GameDetails) => {
+      setGame(gameData);
+      // Redirect all users to the select page of the game
+      navigate(`/select/${gameId}`);
     });
   }, [signalR, gameId, navigate]);
 
@@ -224,28 +231,32 @@ const GameLobby: React.FC = () => {
 
   const handleStartGame = async () => {
     if (!gameId || !isHost || !game) return;
-    
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/Game/UpdateGame/${gameId}`,
-        {
-          method: 'PUT',
+      
+    // Trigger the StartGame event on the hub to notify all players
+    if (signalR.connection && signalR.isConnected && game.code) {
+      try {
+
+        const response = await fetch(`${API_BASE_URL}/api/Game/StartGame/${gameId}`, {
+          method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            status: 'Active'
-          })
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to start game');
         }
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to start game');
+
+        await signalR.connection.invoke("StartGame", game.code);
+        // The navigation will happen in the GameStarted event handler
+      } catch (err) {
+        console.error("Error starting game:", err);
+        setError("Failed to start game. Please try again.");
       }
-      
-      navigate(`/gameroom/${gameId}`);
-    } catch (err) {
-      setError('Failed to start the game. Please try again.');
+    } else {
+      console.error("SignalR connection is not established.");
+      setError("Failed to start game. Please try again.");
     }
   };
 
@@ -256,7 +267,6 @@ const GameLobby: React.FC = () => {
         setTimeout(() => setCopied(false), 1500);
       }).catch(err => {
         console.error('Failed to copy code: ', err);
-     
       });
     }
   };
@@ -406,7 +416,7 @@ const GameLobby: React.FC = () => {
         <div className="settings-grid">
           <div className="setting-box">
             <span className="setting-label">Rounds</span>
-            <span className="setting-value">{game.rounds}</span>
+            <span className="setting-value">{game.rounds.length}</span>
           </div>
           <div className="setting-box">
             <span className="setting-label">Time per Round</span>
@@ -422,8 +432,16 @@ const GameLobby: React.FC = () => {
                 alt={`${participant.username}'s avatar`}
                 className="player-avatar-small"
               />
-              <span>{participant.username}</span>
-              {participant.userId === game.hostUserId && <span className="host-indicator">(Host)</span>}
+              <span>
+                {participant.username} 
+                {participant.userId === game.hostUserId && (
+                  <span className="host-indicator">
+                    <svg className="crown-icon" viewBox="0 0 24 24" width="16" height="16">
+                      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm0 2h14v2H5v-2z" />
+                    </svg>
+                  </span>
+                )}
+              </span>
             </div>
           ))}
         </div>

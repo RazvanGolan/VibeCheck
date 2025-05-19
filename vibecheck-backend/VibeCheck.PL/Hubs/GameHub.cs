@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.SignalR;
 using VibeCheck.BL.Interfaces;
+using VibeCheck.DAL.Dtos.Songs;
+using VibeCheck.DAL.Dtos.Users;
+using VibeCheck.DAL.Enums;
 
 namespace VibeCheck.PL.Hubs;
 
@@ -38,26 +41,59 @@ public class GameHub : Hub
     
     public async Task StartGame(string gameCode)
     {
-        var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("GameStarted", game);
+        var updatedGame = await _gameService.GetGameByCodeAsync(gameCode);
+        await Clients.Group(gameCode).SendAsync("GameStarted", updatedGame);
     }
     
-    public async Task EndGame(string gameCode)
+    public async Task StartRound(string gameId)
     {
-        var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("GameEnded", game);
+        var game = await _gameService.StartRoundAsync(Guid.Parse(gameId));
+        await Clients.Group(game.Code).SendAsync("RoundStarted", game);
     }
     
-    // TODO: implement song submission and voting logic
-    public async Task SubmitSong(string gameCode, string song)
+    public async Task SubmitSong(string gameCode, SongDto song)
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("SongSubmitted", game);
+        await Clients.Group(gameCode).SendAsync("SongSubmitted", game, song);
     }
     
-    public async Task VoteSong(string gameCode, string song)
+    public async Task VoteSong(string gameCode, SongDto song, string userId)
     {
         var game = await _gameService.GetGameByCodeAsync(gameCode);
-        await Clients.Group(gameCode).SendAsync("SongVoted", game);
+        await Clients.Group(gameCode).SendAsync("SongVoted", game, song, userId);
+    }
+    
+    // Synchronize round timing across all clients
+    public async Task SyncRoundTime(string gameId)
+    {
+        var game = await _gameService.GetGameByIdAsync(Guid.Parse(gameId));
+        var currentRound = game.Rounds.FirstOrDefault(r => r.RoundNumber == game.CurrentRound);
+
+        if (game.Status is not GameStatus.Active)
+        {
+            await Task.Delay(100);
+        }
+        
+        if (currentRound != null)
+        {
+            var serverTime = DateTime.UtcNow;
+            var roundStartTime = currentRound.StartTime;
+            
+            var selectionPhaseEndTime = roundStartTime.AddSeconds(game.TimePerRound);
+            
+            var roundEndTime = selectionPhaseEndTime.AddSeconds(game.Participants.Count * 20);
+            
+            var totalTimeRemaining = Math.Max(0, (roundEndTime - serverTime).TotalSeconds);
+            var selectionTimeRemaining = Math.Max(0, (selectionPhaseEndTime - serverTime).TotalSeconds);
+            
+            await Clients.Group(game.Code).SendAsync("RoundTimeSync", 
+                new { 
+                    ServerTime = serverTime,
+                    SelectionPhaseEndTime = selectionPhaseEndTime,
+                    RoundEndTime = roundEndTime,
+                    TotalTimeRemaining = totalTimeRemaining,
+                    SelectionTimeRemaining = selectionTimeRemaining
+                });
+        }
     }
 }

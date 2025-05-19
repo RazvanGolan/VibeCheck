@@ -68,6 +68,22 @@ namespace VibeCheck.PL.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        
+        // [Authorize]
+        [HttpPost("StartGame/{id}")]
+        public async Task<IActionResult> StartGame(Guid id)
+        {
+            try
+            {
+                var startedGame = await _gameService.StartGameAsync(id);
+                return Ok(startedGame);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        
 
         [HttpPut("UpdateGame/{id}")]
         public async Task<IActionResult> UpdateGame(Guid id, [FromBody] UpdateGameDto gameDto)
@@ -176,10 +192,6 @@ namespace VibeCheck.PL.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 return Unauthorized(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {

@@ -4,6 +4,7 @@ using VibeCheck.DAL.Dtos.Leaderboard;
 using VibeCheck.DAL.Dtos.Rounds;
 using VibeCheck.DAL.Dtos.Songs;
 using VibeCheck.DAL.Dtos.Themes;
+using VibeCheck.DAL.Dtos.Users;
 using VibeCheck.DAL.Dtos.Votes;
 using VibeCheck.DAL.Entities;
 using VibeCheck.DAL.Enums;
@@ -35,8 +36,7 @@ namespace VibeCheck.BL.Mapper
                         Songs = r.Songs != null ? r.Songs.Select(s => new SongDto
                         {
                             SongId = s.SongId,
-                            UserId = s.UserId,
-                            UserName = s.UserName,
+                            DeezerSongId = s.DeezerId,
                             Title = s.SongTitle,
                             Artist = s.Artist,
                             AlbumName = s.AlbumName,
@@ -44,15 +44,20 @@ namespace VibeCheck.BL.Mapper
                             AlbumCoverBig = s.AlbumCoverBig,
                             PreviewUrl = s.PreviewUrl,
                             SubmittedAt = s.SubmittedAt,
-                            VoteCount = r.Votes != null ? r.Votes.Count(v => v.SongId == s.SongId) : 0,
-                            Votes = r.Votes != null ? r.Votes.Where(v => v.SongId == s.SongId)
+                            VoteCount = r.Votes != null ? r.Votes.Count(v => v.DeezerSongId == s.DeezerId) : 0,
+                            Votes = r.Votes != null ? r.Votes.Where(v => v.DeezerSongId == s.DeezerId)
                                 .Select(v => new VoteDto
                                 {
                                     GameId = r.Game != null ? r.Game.GameId : Guid.Empty, // Replace null-propagating operator  
-                                    SongId = v.SongId,
+                                    DeezerSongId = v.DeezerSongId,
                                     VoterUserId = v.VoterUserId,
                                     VoterUsername = v.VoterUser != null ? v.VoterUser.Username : "Unknown User" // Fix for CS8072
-                                }).ToList() : new List<VoteDto>()
+                                }).ToList() : new List<VoteDto>(),
+                            Users = s.Users != null ? s.Users.Select(u => new UserDto
+                            {
+                                UserId = u.UserId,
+                                Username = u.Username,
+                            }).ToList() : new List<UserDto>(),
                         }).ToList() : new List<SongDto>()
                     }).ToList()));
 
@@ -67,17 +72,30 @@ namespace VibeCheck.BL.Mapper
             // Song mappings  
             CreateMap<Song, SongDto>()
                 .ForMember(dest => dest.SongId, opt => opt.MapFrom(src => src.SongId))
+                .ForMember(dest => dest.DeezerSongId, opt => opt.MapFrom(src => src.DeezerId))
                 .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.SongTitle))
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
                 .ForMember(dest => dest.VoteCount, opt => opt.Ignore())
                 .ForMember(dest => dest.Votes, opt => opt.MapFrom(src =>
-                    src.Votes != null ? src.Votes.Select(v => new VoteDto
-                    {
-                        GameId = src.Round != null ? src.Round.GameId : Guid.Empty, // Replace null-propagating operator  
-                        SongId = v.SongId,
-                        VoterUserId = v.VoterUserId,
-                        VoterUsername = v.VoterUser != null ? v.VoterUser.Username : "Unknown User" // Fix for CS8072
-                    }).ToList() : new List<VoteDto>()));
+                    src.Votes != null
+                        ? src.Votes.Select(v => new VoteDto
+                        {
+                            GameId = src.Round != null
+                                ? src.Round.GameId
+                                : Guid.Empty, // Replace null-propagating operator  
+                            DeezerSongId = v.DeezerSongId,
+                            VoterUserId = v.VoterUserId,
+                            VoterUsername =
+                                v.VoterUser != null ? v.VoterUser.Username : "Unknown User" // Fix for CS8072
+                        }).ToList()
+                        : new List<VoteDto>()))
+                .ForMember(dest => dest.Users, opt => opt.MapFrom((src =>
+                    src.Users != null
+                        ? src.Users.Select(u => new UserDto
+                        {
+                            UserId = u.UserId,
+                            Username = u.Username,
+                        }).ToList()
+                        : new List<UserDto>())));
 
             // Add CreateGame to Game mapping  
             CreateMap<CreateGameDto, Game>()

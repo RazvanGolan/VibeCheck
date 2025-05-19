@@ -14,6 +14,9 @@ interface SignalRContextType {
   onPlayerLeft: (callback: (participants: any[]) => void) => void;
   onGameStateChanged: (callback: (gameStatus: string) => void) => void;
   onRoundStarted: (callback: (roundNumber: number, theme: string) => void) => void;
+  onGameStarted: (callback: (gameData: any) => void) => void;
+  onRoundTimeSync: (callback: (timeInfo: any) => void) => void;
+  requestRoundTimeSync: (gameCode: string) => Promise<void>;
   removeEventListener: (eventName: string) => void;
 }
 
@@ -24,11 +27,14 @@ const SignalRContext = createContext<SignalRContextType>({
   error: null,
   joinGameGroup: async () => false,
   leaveGameGroup: async () => false,
-  connectToHub: async () => {},  
+  connectToHub: async () => {},
   onPlayerJoined: () => {},
   onPlayerLeft: () => {},
   onGameStateChanged: () => {},
   onRoundStarted: () => {},
+  onGameStarted: () => {},
+  onRoundTimeSync: () => {},
+  requestRoundTimeSync: async () => {},
   removeEventListener: () => {}
 });
 
@@ -142,6 +148,18 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   };
 
+  const requestRoundTimeSync = async (gameCode: string): Promise<void> => {
+    if (!connection || !isConnected) {
+      return;
+    }
+    
+    try {
+      await connection.invoke("SyncRoundTime", gameCode);
+    } catch (err) {
+      console.error("Error requesting time sync:", err);
+    }
+  };
+
   const onPlayerJoined = useCallback((callback: (participants: any[]) => void) => {
     if (connection) {
       // Remove any existing handlers first to avoid duplicates
@@ -182,6 +200,26 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     }
   }, [connection, removeEventListener]);
 
+  const onGameStarted = useCallback((callback: (gameData: any) => void) => {
+    if (connection) {
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("GameStarted");
+      connection.on("GameStarted", (gameData) => {
+        callback(gameData);
+      });
+    }
+  }, [connection, removeEventListener]);
+
+  const onRoundTimeSync = useCallback((callback: (timeInfo: any) => void) => {
+    if (connection) {
+      // Remove any existing handlers first to avoid duplicates
+      removeEventListener("RoundTimeSync");
+      connection.on("RoundTimeSync", (timeInfo) => {
+        callback(timeInfo);
+      });
+    }
+  }, [connection, removeEventListener]);
+
   const value = {
     connection,
     isConnected,
@@ -194,6 +232,9 @@ export const SignalRProvider: React.FC<SignalRProviderProps> = ({ children }) =>
     onPlayerLeft,
     onGameStateChanged,
     onRoundStarted,
+    onGameStarted,
+    onRoundTimeSync,
+    requestRoundTimeSync,
     removeEventListener
   };
 
