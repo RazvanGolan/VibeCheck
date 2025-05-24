@@ -5,8 +5,8 @@ import { useSignalR } from '../../context/SignalRProvider';
 import { SubmitVote, Vote } from '../../types/vote';
 import { Song, SongDto, SongSubmission } from '../../types/song';
 import { GameDetails, RoundDto } from '../../types/gameTypes';
-import './VotingPage.css';
 import { User } from '../../types/user';
+import './VotingPage.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -31,6 +31,16 @@ const VotingPage = () => {
   const endTimeRef = useRef<Date | null>(null);
   const [roundEndingCountdown, setRoundEndingCountdown] = useState<number | null>(null);
   const [gameEnded, setGameEnded] = useState<boolean>(false);
+  
+  // New states for popup and leaderboard
+  const [showResultsPopup, setShowResultsPopup] = useState<boolean>(false);
+  const [roundWinner, setRoundWinner] = useState<SongSubmission | null>(null);
+  const [showFinalLeaderboard, setShowFinalLeaderboard] = useState<boolean>(false);
+  const [playerScores, setPlayerScores] = useState<Array<{user: User, points: number}>>([]);
+  
+  // Add refs to prevent multiple triggers
+  const roundCompleteTriggeredRef = useRef<boolean>(false);
+  const popupTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Request time sync as soon as gameId is available
   useEffect(() => {
@@ -172,9 +182,9 @@ const VotingPage = () => {
           
           // Check if all users have voted
           const totalVotes = updatedRound.songs.reduce((acc, song) => acc + song.voteCount, 0);
-          const allVoted = totalVotes === game?.participants.length;
+          const allVoted = totalVotes === updatedGame.participants.length;
 
-          if (allVoted && !nextRoundTriggered && !gameEnded) {
+          if (allVoted && !roundCompleteTriggeredRef.current) {
             setTimeRemaining('0:00');
             handleRoundComplete();
           }
@@ -215,9 +225,9 @@ const VotingPage = () => {
           
           // Check if all users have voted
           const totalVotes = updatedRound.songs.reduce((acc, song) => acc + song.voteCount, 0);
-          const allVoted = totalVotes === game?.participants.length;
+          const allVoted = totalVotes === updatedGame.participants.length;
             
-          if (allVoted && !nextRoundTriggered && !gameEnded) {
+          if (allVoted && !roundCompleteTriggeredRef.current) {
             setTimeRemaining('0:00');
             handleRoundComplete();
           }
@@ -237,7 +247,7 @@ const VotingPage = () => {
           setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
           
           // If timer has reached zero and this user is the host, schedule next round
-          if (totalTimeRemaining <= 0 && !nextRoundTriggered && !gameEnded) {
+          if (totalTimeRemaining <= 0 && !roundCompleteTriggeredRef.current) {
             handleRoundComplete();
           }
         }
@@ -245,6 +255,19 @@ const VotingPage = () => {
 
       // Listen for round started event
       signalR.connection.on("RoundStarted", (updatedGame: GameDetails) => {
+        // Reset all round completion states
+        roundCompleteTriggeredRef.current = false;
+        setNextRoundTriggered(false);
+        setShowResultsPopup(false);
+        setRoundWinner(null);
+        setRoundEndingCountdown(null);
+        
+        // Clear any existing popup timer
+        if (popupTimerRef.current) {
+          clearTimeout(popupTimerRef.current);
+          popupTimerRef.current = null;
+        }
+        
         navigate(`/select/${gameId}`);
       });
     }
@@ -259,7 +282,7 @@ const VotingPage = () => {
         signalR.connection.off("RoundStarted");
       }
     };
-  }, [signalR, game, user?.id, gameId, isHost, nextRoundTriggered, navigate]);
+  }, [signalR, game, user?.id, gameId, isHost, navigate]);
 
   // Update the timer based on endTimeRef
   useEffect(() => {
@@ -280,6 +303,11 @@ const VotingPage = () => {
       const minutes = Math.floor(currentSecondsRemaining / 60);
       const seconds = currentSecondsRemaining % 60;
       setTimeRemaining(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      
+      // Check if time has reached zero
+      if (currentSecondsRemaining <= 0 && !roundCompleteTriggeredRef.current) {
+        handleRoundComplete();
+      }
     };
     
     updateTimer();
@@ -305,41 +333,42 @@ const VotingPage = () => {
   }, [gameId, signalR]);
 
   useEffect(() => {
-  if (roundEndingCountdown === null) return;
-    
-  // If countdown reaches zero, start the next round
-  if (roundEndingCountdown === 0) {    
-    // Start the next round
-    if (signalR.connection && gameId && isHost) {
-      (async () => {
-        try {
-          if (signalR.connection && gameId)
-            await signalR.connection.invoke("StartRound", gameId);
-        } catch (err) {
-          console.error("Error starting next round:", err);
-          // Reset states if there's an error so we can try again
-          setNextRoundTriggered(false);
-          setRoundEndingCountdown(null);
-        }
-      })();
-    }
-    return;
-  }
-  
-  // Set up the interval to decrement the countdown
-  const intervalId = setInterval(() => {
-    setRoundEndingCountdown(prev => {
-      if (prev === null || prev <= 0) {
-        clearInterval(intervalId);
-        return 0;
+    if (roundEndingCountdown === null) return;
+      
+    // If countdown reaches zero, start the next round
+    if (roundEndingCountdown === 0) {    
+      // Start the next round
+      if (signalR.connection && gameId && isHost) {
+        (async () => {
+          try {
+            if (signalR.connection && gameId)
+              await signalR.connection.invoke("StartRound", gameId);
+          } catch (err) {
+            console.error("Error starting next round:", err);
+            // Reset states if there's an error so we can try again
+            setNextRoundTriggered(false);
+            setRoundEndingCountdown(null);
+            roundCompleteTriggeredRef.current = false;
+          }
+        })();
       }
-      return prev - 1;
-    });
-  }, 1000);
-  
-  // Clean up the interval when the component unmounts or when countdown changes
-  return () => clearInterval(intervalId);
-}, [roundEndingCountdown, signalR.connection, gameId]);
+      return;
+    }
+    
+    // Set up the interval to decrement the countdown
+    const intervalId = setInterval(() => {
+      setRoundEndingCountdown(prev => {
+        if (prev === null || prev <= 0) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    // Clean up the interval when the component unmounts or when countdown changes
+    return () => clearInterval(intervalId);
+  }, [roundEndingCountdown, signalR.connection, gameId, isHost]);
 
   const handlePlayToggle = (submission: SongSubmission) => {
     if (currentlyPlaying === submission.id) {
@@ -417,17 +446,187 @@ const VotingPage = () => {
     }
   };
 
-    // Handle round completion
+  // Handle round completion
   const handleRoundComplete = () => {
-    if (nextRoundTriggered) return;
+    if (roundCompleteTriggeredRef.current) return;
+    roundCompleteTriggeredRef.current = true;
     setNextRoundTriggered(true);
+
+    // Show results popup with winner immediately
+    if (submissions.length > 0) {
+      const winner = submissions[0];
+      setRoundWinner(winner);
+      setShowResultsPopup(true);
+      
+      // Auto-play the winning song
+      if (audioRef.current && winner.song.previewUrl) {
+        audioRef.current.pause();
+        audioRef.current.src = winner.song.previewUrl;
+        audioRef.current.play().catch(err => {
+          console.error('Error playing winning song:', err);
+        });
+        setCurrentlyPlaying(winner.id);
+      }
+    }
 
     if (game && game.currentRound === game.totalRounds) {
       setGameEnded(true);
+      // Calculate final scores
+      calculateFinalScores();
       return;
     }
 
-    setRoundEndingCountdown(10);
+    // Set up popup timer to show for exactly 10 seconds
+    popupTimerRef.current = setTimeout(() => {
+      setShowResultsPopup(false);
+      setRoundEndingCountdown(10);
+    }, 10000);
+  };
+
+  const calculateFinalScores = () => {
+    if (!game) return;
+    
+    const scores: {[userId: string]: {user: User, points: number}} = {};
+    
+    // Initialize scores for all participants
+    game.participants.forEach(participant => {
+      scores[participant.userId] = {
+        user: {
+          id: participant.userId,
+          username: participant.username,
+          avatar: participant.avatar
+        },
+        points: 0
+      };
+    });
+    
+    // Calculate points from all rounds
+    game.rounds.forEach(round => {
+      round.songs.forEach(song => {
+        // Award points to submitters based on votes received
+        song.users?.forEach(submitter => {
+          if (scores[submitter.userId]) {
+            scores[submitter.userId].points += song.voteCount;
+          }
+        });
+      });
+    });
+    
+    // Convert to array and sort by points
+    const sortedScores = Object.values(scores).sort((a, b) => b.points - a.points);
+    setPlayerScores(sortedScores);
+    
+    // Show final leaderboard after 10 seconds
+    popupTimerRef.current = setTimeout(() => {
+      setShowResultsPopup(false);
+      setShowFinalLeaderboard(true);
+    }, 10000);
+  };
+
+  // Clean up popup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+      }
+    };
+  }, []);
+
+  const ResultsPopup = () => {
+    if (!showResultsPopup || !roundWinner) return null;
+
+    return (
+      <div className="results-popup-overlay">
+        <div className="results-popup">
+          <div className="popup-header">
+            <h2 className="popup-title">🎉 Round Winner! 🎉</h2>
+          </div>
+          
+          <div className="winner-card">
+            <img
+              src={roundWinner.song.albumCoverBig}
+              alt={`${roundWinner.song.title} cover`}
+              className="winner-cover"
+            />
+            <div className="winner-info">
+              <h3 className="winner-song-title">{roundWinner.song.title}</h3>
+              <p className="winner-artist">{roundWinner.song.artistName}</p>
+              <div className="winner-submitters">
+                <span>Submitted by </span>
+                {roundWinner.users.map((user, i) => (
+                  <span key={user.userId} className="winner-submitter">
+                    {i > 0 && (i === roundWinner.users.length - 1 ? " & " : ", ")}
+                    <strong>{user.username}</strong>
+                  </span>
+                ))}
+              </div>
+              <div className="winner-votes">
+                <span className="votes-count">{roundWinner.votes}</span>
+                <span className="votes-label"> votes</span>
+              </div>
+            </div>
+          </div>
+          
+          {!gameEnded && roundEndingCountdown !== null && (
+            <div className="next-round-info">
+              <p className="countdown-text">Next round starting in</p>
+              <div className="countdown-timer">{roundEndingCountdown}</div>
+            </div>
+          )}
+          
+          {gameEnded && (
+            <div className="game-complete-info">
+              <p className="game-complete-text">🎊 Game Complete! 🎊</p>
+              <p className="leaderboard-text">Preparing final results...</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const FinalLeaderboard = () => {
+    if (!showFinalLeaderboard) return null;
+
+    return (
+      <div className="leaderboard-overlay">
+        <div className="leaderboard-popup">
+          <div className="leaderboard-header">
+            <h2 className="leaderboard-title">🏆 Final Results 🏆</h2>
+          </div>
+          
+          <div className="leaderboard-list">
+            {playerScores.map((player, index) => (
+              <div key={player.user.id} className={`leaderboard-item ${index === 0 ? 'winner' : ''}`}>
+                <div className="player-rank">
+                  {index === 0 ? '👑' : `#${index + 1}`}
+                </div>
+                <img
+                  src={player.user.avatar || '/avatars/1.png'}
+                  alt={`${player.user.username}'s avatar`}
+                  className="player-avatar"
+                />
+                <div className="player-info">
+                  <span className="player-name">{player.user.username}</span>
+                  {index === 0 && <span className="winner-badge">Champion!</span>}
+                </div>
+                <div className="player-points">
+                  <span className="points-value">{player.points}</span>
+                  <span className="points-label">pts</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <button 
+            className="close-leaderboard-btn"
+            onClick={() => navigate('/dashboard')}
+          >
+            Return to Dashboard
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -552,32 +751,8 @@ const VotingPage = () => {
             </div>
           )}
 
-          {timeRemaining === '0:00' && submissions.length > 0 && (
-            <div className="voting-results">
-              <h2 className="results-title">Voting Complete!</h2>
-              <p className="winner-announcement">
-                The winner is "{submissions[0].song.title}" by {submissions[0].song.artistName}, 
-                submitted by {submissions[0].users.length > 0 
-                  ? submissions[0].users.map((user, i) => (
-                      <span key={user.userId}>
-                        {i > 0 && (i === submissions[0].users.length - 1 ? " & " : ", ")}
-                        <b>{user.username}</b>
-                      </span>
-                    ))
-                  : <b>Unknown User</b>}!
-              </p>
-            </div>
-          )}
-          {roundEndingCountdown !== null && roundEndingCountdown > 0 && (
-            <p className="next-round-countdown">
-              Next round starting in {roundEndingCountdown} seconds...
-            </p>
-          )}
-          {gameEnded && (
-            <p className="game-ended-message">
-              The game has ended! Thank you for playing!
-            </p>
-          )}
+          <ResultsPopup />
+          <FinalLeaderboard />
         </>
       )}
     </div>
