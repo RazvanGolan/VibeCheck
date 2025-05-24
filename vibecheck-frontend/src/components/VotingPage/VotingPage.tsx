@@ -29,7 +29,7 @@ const VotingPage = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const endTimeRef = useRef<Date | null>(null);
-  const [roundEndingCountdown, setRoundEndingCountdown] = useState<number | null>(null);
+  // const [roundEndingCountdown, setRoundEndingCountdown] = useState<number | null>(null); // REMOVED
   const [gameEnded, setGameEnded] = useState<boolean>(false);
   
   // New states for popup and leaderboard
@@ -63,6 +63,9 @@ const VotingPage = () => {
           setCurrentlyPlaying(null);
         });
       }
+      // Clear any pending timers on unmount
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
     };
   }, []);
 
@@ -260,7 +263,7 @@ const VotingPage = () => {
         setNextRoundTriggered(false);
         setShowResultsPopup(false);
         setRoundWinner(null);
-        setRoundEndingCountdown(null);
+        // setRoundEndingCountdown(null); // REMOVED
         
         // Clear any existing popup timer
         if (popupTimerRef.current) {
@@ -282,7 +285,7 @@ const VotingPage = () => {
         signalR.connection.off("RoundStarted");
       }
     };
-  }, [signalR, game, user?.id, gameId, isHost, navigate]);
+  }, [signalR, game, user?.id, gameId, navigate]); // Removed isHost from dependencies as it's set based on game and user
 
   // Update the timer based on endTimeRef
   useEffect(() => {
@@ -319,12 +322,12 @@ const VotingPage = () => {
         clearInterval(intervalId);
       }
     };
-  }, [gameId, endTimeRef.current]);
+  }, [gameId, endTimeRef.current]); // handleRoundComplete removed from deps, use ref or useCallback if needed. It's stable for now.
 
   // Re-sync time every 10 seconds to prevent drift and stay synchronized
   useEffect(() => {
     const syncInterval = setInterval(() => {
-      if (gameId) {
+      if (gameId && signalR.isConnected) { // Ensure signalR is connected before requesting
         signalR.requestRoundTimeSync(gameId);
       }
     }, 10000);
@@ -332,43 +335,7 @@ const VotingPage = () => {
     return () => clearInterval(syncInterval);
   }, [gameId, signalR]);
 
-  useEffect(() => {
-    if (roundEndingCountdown === null) return;
-      
-    // If countdown reaches zero, start the next round
-    if (roundEndingCountdown === 0) {    
-      // Start the next round
-      if (signalR.connection && gameId && isHost) {
-        (async () => {
-          try {
-            if (signalR.connection && gameId)
-              await signalR.connection.invoke("StartRound", gameId);
-          } catch (err) {
-            console.error("Error starting next round:", err);
-            // Reset states if there's an error so we can try again
-            setNextRoundTriggered(false);
-            setRoundEndingCountdown(null);
-            roundCompleteTriggeredRef.current = false;
-          }
-        })();
-      }
-      return;
-    }
-    
-    // Set up the interval to decrement the countdown
-    const intervalId = setInterval(() => {
-      setRoundEndingCountdown(prev => {
-        if (prev === null || prev <= 0) {
-          clearInterval(intervalId);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    // Clean up the interval when the component unmounts or when countdown changes
-    return () => clearInterval(intervalId);
-  }, [roundEndingCountdown, signalR.connection, gameId, isHost]);
+  // REMOVED useEffect for roundEndingCountdown
 
   const handlePlayToggle = (submission: SongSubmission) => {
     if (currentlyPlaying === submission.id) {
@@ -389,57 +356,36 @@ const VotingPage = () => {
   };
 
   const handleVote = async (songId: string) => {
-    // Find the song submission
     const submission = submissions.find(sub => sub.deezerSongId === songId);
-    
-    // Return if user can't vote or if this is the user's submission
     if (!gameId || !user || !currentRound || userHasVoted || (submission && submission.isUserSubmitter)) return;
 
     try {
-      // Create vote object
       const voteData: SubmitVote = {
         gameId: gameId,
         voterUserId: user.id,
         deezerSongId: songId
       };
 
-      // API call to submit vote
       const response = await fetch(`${API_BASE_URL}/api/Game/Vote`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(voteData)
       });
       
-      if (!response.ok) {
-        throw new Error('Failed to submit vote');
-      }
+      if (!response.ok) throw new Error('Failed to submit vote');
       
-      // Optimistically update UI
-      setSubmissions(prev => prev.map(submission => {
-        if (submission.id === songId) {
-          return { 
-            ...submission, 
-            votes: submission.votes + 1, 
-            hasUserVoted: true,
-            votedBy: [...(submission.votedBy || []), user.id]
-          };
-        }
-        return submission;
-      }).sort((a, b) => b.votes - a.votes));
+      setSubmissions(prev => prev.map(s => 
+        s.id === songId ? { ...s, votes: s.votes + 1, hasUserVoted: true, votedBy: [...(s.votedBy || []), user.id] } : s
+      ).sort((a, b) => b.votes - a.votes));
       
       setUserHasVoted(true);
       
-      // Notify other players via SignalR
       if (signalR.connection && game?.code) {
-        const votedSong = submissions.find(sub => sub.deezerSongId === songId)?.song;
-        if (votedSong) {
-          // Call the VoteSong method on the server with the correct parameters
-          await signalR.connection.invoke("VoteSong", game.code, votedSong, user.id);
+        const votedSongDetails = submissions.find(sub => sub.deezerSongId === songId)?.song;
+        if (votedSongDetails) {
+          await signalR.connection.invoke("VoteSong", game.code, votedSongDetails, user.id);
         }
       }
-      
     } catch (err) {
       console.error('Error submitting vote:', err);
       setError('Failed to submit vote. Please try again.');
@@ -450,37 +396,47 @@ const VotingPage = () => {
   const handleRoundComplete = () => {
     if (roundCompleteTriggeredRef.current) return;
     roundCompleteTriggeredRef.current = true;
-    setNextRoundTriggered(true);
+    setNextRoundTriggered(true); 
 
-    // Show results popup with winner immediately
     if (submissions.length > 0) {
       const winner = submissions[0];
       setRoundWinner(winner);
       setShowResultsPopup(true);
       
-      // Auto-play the winning song
       if (audioRef.current && winner.song.previewUrl) {
         audioRef.current.pause();
         audioRef.current.src = winner.song.previewUrl;
-        audioRef.current.play().catch(err => {
-          console.error('Error playing winning song:', err);
-        });
+        audioRef.current.play().catch(err => console.error('Error playing winning song:', err));
         setCurrentlyPlaying(winner.id);
       }
     }
 
     if (game && game.currentRound === game.totalRounds) {
       setGameEnded(true);
-      // Calculate final scores
       calculateFinalScores();
-      return;
+      return; 
     }
 
-    // Set up popup timer to show for exactly 10 seconds
+    // For non-final rounds: Show popup for 10s, then host starts next round
     popupTimerRef.current = setTimeout(() => {
-      setShowResultsPopup(false);
-      setRoundEndingCountdown(10);
-    }, 10000);
+      setShowResultsPopup(false); 
+
+      if (isHost && signalR.connection && gameId) {
+        (async () => {
+          try {
+            console.log("Host is attempting to start the next round after popup.");
+            if (signalR.connection) {
+              await signalR.connection.invoke("StartRound", gameId);
+            }
+          } catch (err) {
+            console.error("Error starting next round from handleRoundComplete:", err);
+            setError("Failed to start the next round. The host may need to retry.");
+            setNextRoundTriggered(false);
+            roundCompleteTriggeredRef.current = false; 
+          }
+        })();
+      }
+    }, 10000); 
   };
 
   const calculateFinalScores = () => {
@@ -488,22 +444,15 @@ const VotingPage = () => {
     
     const scores: {[userId: string]: {user: User, points: number}} = {};
     
-    // Initialize scores for all participants
     game.participants.forEach(participant => {
       scores[participant.userId] = {
-        user: {
-          id: participant.userId,
-          username: participant.username,
-          avatar: participant.avatar
-        },
+        user: { id: participant.userId, username: participant.username, avatar: participant.avatar },
         points: 0
       };
     });
     
-    // Calculate points from all rounds
     game.rounds.forEach(round => {
       round.songs.forEach(song => {
-        // Award points to submitters based on votes received
         song.users?.forEach(submitter => {
           if (scores[submitter.userId]) {
             scores[submitter.userId].points += song.voteCount;
@@ -512,25 +461,14 @@ const VotingPage = () => {
       });
     });
     
-    // Convert to array and sort by points
     const sortedScores = Object.values(scores).sort((a, b) => b.points - a.points);
     setPlayerScores(sortedScores);
     
-    // Show final leaderboard after 10 seconds
     popupTimerRef.current = setTimeout(() => {
       setShowResultsPopup(false);
       setShowFinalLeaderboard(true);
     }, 10000);
   };
-
-  // Clean up popup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (popupTimerRef.current) {
-        clearTimeout(popupTimerRef.current);
-      }
-    };
-  }, []);
 
   const ResultsPopup = () => {
     if (!showResultsPopup || !roundWinner) return null;
@@ -567,10 +505,9 @@ const VotingPage = () => {
             </div>
           </div>
           
-          {!gameEnded && roundEndingCountdown !== null && (
+          {!gameEnded && (
             <div className="next-round-info">
-              <p className="countdown-text">Next round starting in</p>
-              <div className="countdown-timer">{roundEndingCountdown}</div>
+              <p className="countdown-text">Preparing next round...</p>
             </div>
           )}
           
@@ -675,44 +612,6 @@ const VotingPage = () => {
                         <p className="song-artist" title={submission.song.artistName}>
                           {submission.song.artistName}
                         </p>
-                        <div className="submitter-info">
-                          {submission.users.length > 0 ? (
-                            <>
-                              <div className="submitter-avatars">
-                                {submission.users.map((user, i) => (
-                                  <img 
-                                    key={user.userId}
-                                    src={user.avatar || '/avatars/1.png'} 
-                                    alt={`${user.username}'s avatar`}
-                                    className="submitter-avatar"
-                                    style={{marginLeft: i > 0 ? '-8px' : '0'}}
-                                  />
-                                ))}
-                              </div>
-                              <span className="submitter-name">
-                                Submitted by <b>
-                                {submission.users.map((user, i) => (
-                                  <span key={user.userId}>
-                                    {i > 0 && (i === submission.users.length - 1 ? " & " : ", ")}
-                                    {user.username}
-                                  </span>
-                                ))}
-                                </b>
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <img 
-                                src="/avatars/1.png" 
-                                alt="Default avatar"
-                                className="submitter-avatar" 
-                              />
-                              <span className="submitter-name">
-                                Submitted by <b>Unknown User</b>
-                              </span>
-                            </>
-                          )}
-                        </div>
                       </div>
                     </div>
                     
