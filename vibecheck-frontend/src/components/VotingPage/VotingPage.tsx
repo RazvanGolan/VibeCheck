@@ -31,6 +31,9 @@ const VotingPage = () => {
   const endTimeRef = useRef<Date | null>(null);
   // const [roundEndingCountdown, setRoundEndingCountdown] = useState<number | null>(null); // REMOVED
   const [gameEnded, setGameEnded] = useState<boolean>(false);
+  const [isTie, setIsTie] = useState<boolean>(false); // Added for tie scenario
+  const [noVotesCast, setNoVotesCast] = useState<boolean>(false); // Added for no votes scenario
+  const [isGameTie, setIsGameTie] = useState<boolean>(false); // Added for game tie scenario
   
   // New states for popup and leaderboard
   const [showResultsPopup, setShowResultsPopup] = useState<boolean>(false);
@@ -188,8 +191,12 @@ const VotingPage = () => {
           const allVoted = totalVotes === updatedGame.participants.length;
 
           if (allVoted && !roundCompleteTriggeredRef.current) {
-            setTimeRemaining('0:00');
-            handleRoundComplete();
+            setTimeRemaining('0:00'); // Immediately set display to 0:00
+            if (timerRef.current) { // Stop the main round timer
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            handleRoundComplete(updatedSubmissions, updatedGame); // Pass updatedSubmissions and updatedGame
           }
         }
       });
@@ -231,8 +238,12 @@ const VotingPage = () => {
           const allVoted = totalVotes === updatedGame.participants.length;
             
           if (allVoted && !roundCompleteTriggeredRef.current) {
-            setTimeRemaining('0:00');
-            handleRoundComplete();
+            setTimeRemaining('0:00'); // Immediately set display to 0:00
+            if (timerRef.current) { // Stop the main round timer
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            handleRoundComplete(updatedSubmissions, updatedGame); // Pass updatedSubmissions and updatedGame
           }
         }
       });
@@ -240,6 +251,11 @@ const VotingPage = () => {
       // Listen for time sync updates
       signalR.onRoundTimeSync((timeInfo) => {
         if (timeInfo) {
+          // If round completion has already been triggered locally, ignore further time sync updates for this round.
+          if (roundCompleteTriggeredRef.current) {
+            return;
+          }
+
           const { totalTimeRemaining, roundEndTime } = timeInfo;
 
           const endTimeDate = new Date(roundEndTime);
@@ -265,10 +281,17 @@ const VotingPage = () => {
         setRoundWinner(null);
         // setRoundEndingCountdown(null); // REMOVED
         
-        // Clear any existing popup timer
+        // Clear any existing popup timer (for results popup auto-hide)
         if (popupTimerRef.current) {
           clearTimeout(popupTimerRef.current);
           popupTimerRef.current = null;
+        }
+
+        // Clear the main round countdown timer to prevent it from re-triggering
+        // handleRoundComplete for the old round during navigation/transition.
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
         }
         
         navigate(`/select/${gameId}`);
@@ -393,65 +416,103 @@ const VotingPage = () => {
   };
 
   // Handle round completion
-  const handleRoundComplete = () => {
+  const handleRoundComplete = (currentSubmissionsParam?: SongSubmission[], latestGameDetails?: GameDetails) => {
     if (roundCompleteTriggeredRef.current) return;
     roundCompleteTriggeredRef.current = true;
-    setNextRoundTriggered(true); 
+    
+    const submissionsToProcess = currentSubmissionsParam || submissions;
 
-    if (submissions.length > 0) {
-      const winner = submissions[0];
-      setRoundWinner(winner);
-      setShowResultsPopup(true);
-      
-      if (audioRef.current && winner.song.previewUrl) {
-        audioRef.current.pause();
-        audioRef.current.src = winner.song.previewUrl;
-        audioRef.current.play().catch(err => console.error('Error playing winning song:', err));
-        setCurrentlyPlaying(winner.id);
+    setNextRoundTriggered(true);
+    setNoVotesCast(false);
+    setIsTie(false);
+
+    if (submissionsToProcess.length > 0) {
+      const topSubmission = submissionsToProcess[0];
+      const topVoteCount = topSubmission.votes;
+
+      if (topVoteCount === 0) {
+        setNoVotesCast(true);
+      } else {
+        const tiedSubmissions = submissionsToProcess.filter(s => s.votes === topVoteCount);
+        if (tiedSubmissions.length > 1) {
+          setIsTie(true);
+          setRoundWinner(null); 
+        } else {
+          setRoundWinner(topSubmission);
+          if (audioRef.current && topSubmission.song.previewUrl) {
+            audioRef.current.pause();
+            audioRef.current.src = topSubmission.song.previewUrl;
+            audioRef.current.play().catch(err => console.error('Error playing winning song:', err));
+            setCurrentlyPlaying(topSubmission.id);
+          }
+        }
       }
+    } else {
+      setNoVotesCast(true); 
     }
+    setShowResultsPopup(true);
 
-    if (game && game.currentRound === game.totalRounds) {
+    const gameDataForFinalCheck = latestGameDetails || game;
+
+    if (gameDataForFinalCheck && gameDataForFinalCheck.currentRound === gameDataForFinalCheck.totalRounds) {
       setGameEnded(true);
-      calculateFinalScores();
+      calculateFinalScores(gameDataForFinalCheck);
       return; 
     }
 
     // For non-final rounds: Show popup for 10s, then host starts next round
+    if (popupTimerRef.current) {
+      clearTimeout(popupTimerRef.current);
+    }
     popupTimerRef.current = setTimeout(() => {
-      setShowResultsPopup(false); 
-
-      if (isHost && signalR.connection && gameId) {
+      if (isHost && signalR.connection && gameId && !gameEnded) {
         (async () => {
           try {
+            setError(null);
             console.log("Host is attempting to start the next round after popup.");
             if (signalR.connection) {
               await signalR.connection.invoke("StartRound", gameId);
             }
           } catch (err) {
             console.error("Error starting next round from handleRoundComplete:", err);
-            setError("Failed to start the next round. The host may need to retry.");
-            setNextRoundTriggered(false);
-            roundCompleteTriggeredRef.current = false; 
+            setError("Failed to start the next round. The host may need to retry or refresh.");
+            setNextRoundTriggered(false); 
+            setShowResultsPopup(true);
+            if (popupTimerRef.current) {
+              clearTimeout(popupTimerRef.current);
+              popupTimerRef.current = null;
+            }
           }
         })();
+      } else if (!isHost && !gameEnded) {
+        if (!error) setShowResultsPopup(false);
+      } else if (gameEnded) {
+        setShowResultsPopup(false);
       }
     }, 10000); 
   };
 
-  const calculateFinalScores = () => {
-    if (!game) return;
+  const calculateFinalScores = (finalGameData?: GameDetails) => {
+    const gameToUse = finalGameData || game;
+
+    if (!gameToUse) {
+      console.error("Cannot calculate final scores, game data is missing.");
+      return;
+    }
     
+    console.log("Calculating final scores with game data (source: " + (finalGameData ? "param" : "state") + "):", JSON.parse(JSON.stringify(gameToUse)));
+
     const scores: {[userId: string]: {user: User, points: number}} = {};
+    setIsGameTie(false); // Reset game tie state
     
-    game.participants.forEach(participant => {
+    gameToUse.participants.forEach(participant => {
       scores[participant.userId] = {
         user: { id: participant.userId, username: participant.username, avatar: participant.avatar },
         points: 0
       };
     });
     
-    game.rounds.forEach(round => {
+    gameToUse.rounds.forEach(round => {
       round.songs.forEach(song => {
         song.users?.forEach(submitter => {
           if (scores[submitter.userId]) {
@@ -463,6 +524,19 @@ const VotingPage = () => {
     
     const sortedScores = Object.values(scores).sort((a, b) => b.points - a.points);
     setPlayerScores(sortedScores);
+
+    // Check for a game tie among top players
+    if (sortedScores.length > 1 && 
+        sortedScores[0].points === sortedScores[1].points &&
+        sortedScores[0].points > 0) { // Ensure there are actual points for a meaningful tie
+      setIsGameTie(true);
+    } else if (sortedScores.length === 1 && sortedScores[0].points > 0) {
+      // If only one player, they are the winner, not a tie.
+      setIsGameTie(false);
+    } else if (sortedScores.every(score => score.points === 0)){
+        // If all players have 0 points, it is also a tie (of sorts)
+        setIsGameTie(true); 
+    }
     
     popupTimerRef.current = setTimeout(() => {
       setShowResultsPopup(false);
@@ -471,39 +545,53 @@ const VotingPage = () => {
   };
 
   const ResultsPopup = () => {
-    if (!showResultsPopup || !roundWinner) return null;
+    if (!showResultsPopup || (!roundWinner && !isTie && !noVotesCast)) return null;
 
     return (
       <div className="results-popup-overlay">
         <div className="results-popup">
           <div className="popup-header">
-            <h2 className="popup-title">🎉 Round Winner! 🎉</h2>
+            <h2 className="popup-title">
+              {isTie ? "🤝 It's a Tie! 🤝" : noVotesCast ? "🤷 No Votes Cast 🤷" : "🎉 Round Winner! 🎉"}
+            </h2>
           </div>
           
-          <div className="winner-card">
-            <img
-              src={roundWinner.song.albumCoverBig}
-              alt={`${roundWinner.song.title} cover`}
-              className="winner-cover"
-            />
-            <div className="winner-info">
-              <h3 className="winner-song-title">{roundWinner.song.title}</h3>
-              <p className="winner-artist">{roundWinner.song.artistName}</p>
-              <div className="winner-submitters">
-                <span>Submitted by </span>
-                {roundWinner.users.map((user, i) => (
-                  <span key={user.userId} className="winner-submitter">
-                    {i > 0 && (i === roundWinner.users.length - 1 ? " & " : ", ")}
-                    <strong>{user.username}</strong>
-                  </span>
-                ))}
-              </div>
-              <div className="winner-votes">
-                <span className="votes-count">{roundWinner.votes}</span>
-                <span className="votes-label"> votes</span>
+          {noVotesCast ? (
+            <div className="no-votes-message">
+              <p>No votes were cast in this round.</p>
+              <p>Let's see if the next round gets more action!</p>
+            </div>
+          ) : isTie ? (
+            <div className="tie-message">
+              <p>We have a tie! Multiple songs shared the top spot.</p>
+              <p>Interesting choices everyone!</p>
+            </div>
+          ) : roundWinner && (
+            <div className="winner-card">
+              <img
+                src={roundWinner.song.albumCoverBig}
+                alt={`${roundWinner.song.title} cover`}
+                className="winner-cover"
+              />
+              <div className="winner-info">
+                <h3 className="winner-song-title">{roundWinner.song.title}</h3>
+                <p className="winner-artist">{roundWinner.song.artistName}</p>
+                <div className="winner-submitters">
+                  <span>Submitted by </span>
+                  {roundWinner.users.map((user, i) => (
+                    <span key={user.userId} className="winner-submitter">
+                      {i > 0 && (i === roundWinner.users.length - 1 ? " & " : ", ")}
+                      <strong>{user.username}</strong>
+                    </span>
+                  ))}
+                </div>
+                <div className="winner-votes">
+                  <span className="votes-count">{roundWinner.votes}</span>
+                  <span className="votes-label"> votes</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           {!gameEnded && (
             <div className="next-round-info">
@@ -525,34 +613,45 @@ const VotingPage = () => {
   const FinalLeaderboard = () => {
     if (!showFinalLeaderboard) return null;
 
+    const topScore = playerScores.length > 0 ? playerScores[0].points : 0;
+
     return (
       <div className="leaderboard-overlay">
         <div className="leaderboard-popup">
           <div className="leaderboard-header">
-            <h2 className="leaderboard-title">🏆 Final Results 🏆</h2>
+            <h2 className="leaderboard-title">
+              {isGameTie ? "🏆 Final Results - It's a Tie! 🏆" : "🏆 Final Results 🏆"}
+            </h2>
           </div>
           
           <div className="leaderboard-list">
-            {playerScores.map((player, index) => (
-              <div key={player.user.id} className={`leaderboard-item ${index === 0 ? 'winner' : ''}`}>
-                <div className="player-rank">
-                  {index === 0 ? '👑' : `#${index + 1}`}
+            {playerScores.map((player, index) => {
+              const isWinner = isGameTie 
+                ? player.points === topScore && topScore > 0
+                : index === 0 && player.points > 0;
+              const displayRank = isWinner ? '👑' : `#${index + 1}`;
+
+              return (
+                <div key={player.user.id} className={`leaderboard-item ${isWinner ? 'winner' : ''}`}>
+                  <div className="player-rank">
+                    {displayRank}
+                  </div>
+                  <img
+                    src={player.user.avatar || '/avatars/1.png'}
+                    alt={`${player.user.username}'s avatar`}
+                    className="player-avatar"
+                  />
+                  <div className="player-info">
+                    <span className="player-name">{player.user.username}</span>
+                    {isWinner && <span className="winner-badge">{isGameTie ? 'Tied Winner!' : 'Champion!'}</span>}
+                  </div>
+                  <div className="player-points">
+                    <span className="points-value">{player.points}</span>
+                    <span className="points-label">pts</span>
+                  </div>
                 </div>
-                <img
-                  src={player.user.avatar || '/avatars/1.png'}
-                  alt={`${player.user.username}'s avatar`}
-                  className="player-avatar"
-                />
-                <div className="player-info">
-                  <span className="player-name">{player.user.username}</span>
-                  {index === 0 && <span className="winner-badge">Champion!</span>}
-                </div>
-                <div className="player-points">
-                  <span className="points-value">{player.points}</span>
-                  <span className="points-label">pts</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           <button 
