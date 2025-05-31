@@ -103,7 +103,7 @@ const VotingPage = () => {
             // Check if current user is a submitter of this song
             const isUserSubmitter = user ? submitters.some(submitter => submitter.userId === user.id) : false;
             songSubmissions.push({
-              id: song.id,
+              id: song.deezerSongId,
               deezerSongId: song.deezerSongId,
               song: song,
               users: submitters,
@@ -169,7 +169,7 @@ const VotingPage = () => {
             const isUserSubmitter = user ? (song.users || []).some(submitter => submitter.userId === user.id) : false;
             
             return {
-              id: song.id,
+              id: song.deezerSongId,
               deezerSongId: song.deezerSongId,
               song: song,
               users: song.users || [],
@@ -212,7 +212,7 @@ const VotingPage = () => {
             const isUserSubmitter = user ? (song.users || []).some(submitter => submitter.userId === user.id) : false;
             
             return {
-              id: song.id,
+              id: song.deezerSongId,
               deezerSongId: song.deezerSongId,
               song: song,
               users: song.users || [],
