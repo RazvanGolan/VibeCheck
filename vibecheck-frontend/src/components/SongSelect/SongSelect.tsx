@@ -8,36 +8,8 @@ import './SongSelect.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-// Default songs to display when no search query is entered
-const defaultSongs: Song[] = [
-  {
-    id: "781592622",
-    title: "Never Gonna Give You Up",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3?hdnea=exp=1745588479~acl=/api/1/1/7/2/b/0/72b6f8a61730789a9360439ed0cd920c.mp3*~data=user_id=0,application_id=42~hmac=c679d23427f630d2a73d67a4648143ee00ecd9835a4d585c1b86b3fbb1813189",
-    artistName: "Rick Astley",
-    albumName: "The Best of Me",
-    albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/fe779e632872f7c6e9f1c84ffa7afc33/56x56-000000-80-0-0.jpg",
-    albumCoverBig: "https://cdn-images.dzcdn.net/images/cover/fe779e632872f7c6e9f1c84ffa7afc33/500x500-000000-80-0-0.jpg"
-  },
-  {
-    id: "2404839565",
-    title: "Ciocolata",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3?hdnea=exp=1745588577~acl=/api/1/1/e/9/e/0/e9e18161782a3fa845dd3839a0e33c2b.mp3*~data=user_id=0,application_id=42~hmac=ff07d890c8f459470918b620093bf3ad71e5d5ffb724c1fe01df259e3d46fc00",
-    artistName: "Tzanca Uraganu",
-    albumName: "Ciocolata",
-    albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/d4db5f5d0652e2b9bfc93e89c9e5b564/56x56-000000-80-0-0.jpg",
-    albumCoverBig: "https://cdn-images.dzcdn.net/images/cover/d4db5f5d0652e2b9bfc93e89c9e5b564/500x500-000000-80-0-0.jpg"
-  },
-  {
-    id: "10199904",
-    title: "Animal I Have Become",
-    previewUrl: "https://cdnt-preview.dzcdn.net/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3?hdnea=exp=1745588618~acl=/api/1/1/6/3/d/0/63d0024de74cabf4a18f29cc9d82043b.mp3*~data=user_id=0,application_id=42~hmac=7d12b94347e94de574c4ca405f8a9b2510b89588af141931b269fc10e6b88460",
-    artistName: "Three Days Grace",
-    albumName: "One-X",
-    albumCoverSmall: "https://cdn-images.dzcdn.net/images/cover/c7f57c5507ba7753412f52371b475806/56x56-000000-80-0-0.jpg",
-    albumCoverBig: "https://cdn-images.dzcdn.net/images/cover/c7f57c5507ba7753412f52371b475806/500x500-000000-80-0-0.jpg"
-  }
-];
+// List of default song IDs to fetch when the component mounts
+const defaultSongIds: string[] = ["781592622", "2404839565", "10199904", "1141674"]
 
 const SongSelect = () => {
   const { gameId } = useParams<{ gameId: string }>();
@@ -47,7 +19,8 @@ const SongSelect = () => {
 
   const [game, setGame] = useState<GameDetails | null>(null);
   const [currentRound, setCurrentRound] = useState<RoundDto | null>(null);
-  const [songs, setSongs] = useState<Song[]>(defaultSongs);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [defaultSongs, setDefaultSongs] = useState<Song[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
@@ -210,6 +183,36 @@ const SongSelect = () => {
     return () => clearInterval(syncInterval);
   }, [gameId, signalR]);
 
+  // Fetch default songs using the defaultSongIds when component mounts
+  useEffect(() => {
+    const fetchDefaultSongs = async () => {
+      try {
+        const songsPromises = defaultSongIds.map(id => 
+          fetch(`${API_BASE_URL}/api/Song/GetById?songId=${id}`)
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`Failed to fetch song with ID ${id}`);
+              }
+              return response.json();
+            })
+        );
+        
+        const fetchedSongs = await Promise.all(songsPromises);
+        setDefaultSongs(fetchedSongs);
+        
+        // If no search query is active, set these as the displayed songs
+        if (!searchQuery.trim()) {
+          setSongs(fetchedSongs);
+        }
+        
+      } catch (error) {
+        console.error('Error fetching default songs:', error);
+      }
+    };
+
+    fetchDefaultSongs();
+  }, []);
+
   useEffect(() => {
     const fetchSongs = async () => {
       if (!searchQuery.trim()) {
@@ -254,7 +257,7 @@ const SongSelect = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, defaultSongs]);
 
   const handlePlayToggle = (song: Song) => {
     if (currentlyPlaying === song.id) {
